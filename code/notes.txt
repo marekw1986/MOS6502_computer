@@ -1,0 +1,181 @@
+0x0000-0x7FFF 32kB main RAM
+0x8000-0x9FFF BANKED RAM
+0xA000-0xBFFF IO
+	0xA000 CS_0 (this is IO_BOARD)
+		0xA000 MOS6551_UART
+		0xA080 MC5840_TIMER
+		0xA100 8242_KBD_CONTROLLER
+		0xA180 RTC
+		0xA200 8255
+		0xA280 CF_CARD
+		0xA300 UNUSED
+		0xA380 UNUSED
+	0xA400 CS_1
+	0xA800 CS_2
+	0xAC00 CS_3
+	0xB000 CS_4
+	0xB400 CS_5
+	0xB800 CS_6
+	0xBC00 373_OUT_PORT (CTRLREG)
+0xC000-0xFFFF EPROM
+
+
+
+
+
+
+KBD2ASCII:
+    LDA KBDDATA					;Load latest received PS/2 scancode
+    CMP #$00					;Is it 0?
+    BEQ KBD2A_CLRDATA_RETURN    ;Return if code = 0;
+    CMP #$F0					;Is it 0xF0 (key release)
+    BNE KBD2A_CHKSFT			;If not, go to the next stage
+    LDA #$01					;Set key release flag
+    STA KBDKRFL
+    JMP KBD2A_CLRDATA_RETURN	;Zero out KNDDATA and return
+KBD2A_CHKSFT:
+    CMP #$12					;Check if it is (left) shift code
+    BEQ KBD2A_CHKKRSETSF		;If not, go to the next stage
+    CMP #$59					;Check if it is (right) shift code
+    BEQ KBD2A_CHKKRSETSF		;If not, go to the next stage
+KBD2A_SVNEWDATA:
+    TAX					        ;Save current code in X
+    LDA KBDNEW
+    STA KBDOLD					;Old data = new data
+    TXA
+    STA KBDNEW					;New data = received code
+    LDA KBDKRFL
+    CMP #$01					;Check if key release flag is set
+    BNE KBD2A_CHKSHFFLSET		;If not, go to the next stage
+    LDA KBDOLD					;Load old data to acumulator
+    CMP KBDNEW                  ;Compare it with new data
+    BEQ KBD2A_CLRKRFL			;If yes, clear release flag and return
+    NOP							;If not, handle error here.
+    NOP							;These are just a placeholders
+KBD2A_CLRKRFL:
+    LDA #$00
+    STA KBDKRFL
+    JMP KBD2A_CLRDATA_RETURN
+KBD2A_CHKSHFFLSET:
+    LDX #$01					;Just assume we are looking LC table
+    LDA KBDSFFL					;Check shift flag
+    CMP #$00
+    BEQ KBD2A_LOOKUP			;Just search in LC table
+    LDX #$02					;We are looking in UC table if shift flag is set
+KBD2A_LOOKUP		
+    JSR KBDSCANTABLE			;Call scantable searching subroutine
+    CMP #$00					;Check if it returned zero
+    BEQ KBD2A_CLRDATA_RETURN	;If yes, clear data and return
+    TAX					        ;Else clear KBDDATA and return
+    LDA #$00					;Passing ASCII character in A
+    STA KBDDATA
+    TXA
+    RTS
+KBD2A_CHKKRSETSF:
+    LDA KBDKRFL
+    CMP #$01					;Check if key release flag is set
+    BEQ KBD2A_CLRFLDATA_RETURN	;If yes clear flags (and data?) and return
+    LDA #$01					;If not, set shift flag
+    STA KBDSFFL
+    JMP KBD2A_CLRDATA_RETURN    ;Clear KBDDATA and return    
+KBD2A_CLRFLDATA_RETURN:
+    LDA #$00
+    STA KBDSFFL
+    STA KBDKRFL
+KBD2A_CLRDATA_RETURN:
+    LDA #$00
+    STA KBDDATA		
+    RTS
+        
+
+;Set 2
+;Uses BLKIND
+;Scancode accessed directly from memory
+;Shift stored in X (1 lower case, 2 upper case)
+;Result is returned in A, zero if not found	
+KBDSCANTABLE:
+	LDA #<PS2_SCANCODES			;Low byte
+	STA <BLKIND
+	LDA #>PS2_SCANCODES			;High byte
+	STA >BLKIND
+    LDY #$00                    ;We scan first column
+    CLD                         ;There will be some adding done, clear decimal flag. Just to be sure...
+KBDSCANTABLE_LOOP:
+	LDA (<BLKIND), Y			;Load next scancode from table to A
+	CMP	KBDNEW					;Compare A with current receivedscancode
+    BEQ KBDSCANTABLE_FOUND
+    LDA <BLKIND                 ;Load low byte of blkind
+    CLC                         ;Clear decimal flag before adding
+    ADC #$3                     ;Add three to go to the next scancode
+    STA <BLKIND                 ;Sotre new value of low byte of blkind
+    LDA >BLKIND                 ;Load high byte of blkind
+    ADC #$0                     ;Add zero, just to apply carry flag
+    STA >BLKIND                 ;Store new value of high byte of blkind
+    CMP #>PS2_SCANCODES_END     ;Compare A with high byte of adress of end of the scantable
+	BNE KBDSCANTABLE_REL
+	LDA <BLKIND					;Load low byte of BLKIND
+	CMP #<PS2_SCANCODES_END		;Compare with low byte of adress of end of the scantable
+KBDSCANTABLE_REL
+	BCS KBDSCANTABLE_LOOP       ;Continue until you reach end of the table
+    LDA #$0                     ;End of the loop, return zero
+    RTS
+KBDSCANTABLE_FOUND:
+    TXA
+    TAY
+    LDA (<BLKIND), Y						;
+	RTS
+
+
+PS2_SCANCODES:
+		!raw $0E, '`', '~'
+		!raw $13, '1', '!'
+		!raw $1E, '2', '@'
+		!raw $26, '3', '#'
+		!raw $25, '4', '$'
+		!raw $2E, '5', '%'
+		!raw $36, '6', '^'
+		!raw $3D, '7', '&'
+		!raw $3E, '8', '*'
+		!raw $46, '9', '('
+		!raw $45, '0', ')'
+		!raw $4E, '-', '_'
+		!raw $55, '=', '+'
+		!raw $66, $08, $08				;Bacspace here!!!!
+		!raw $0D, $09, $09				;TAB here!!!!!
+		!raw $15, 'q', 'Q'
+		!raw $1D, 'w', 'W'
+		!raw $24, 'e', 'E'
+		!raw $2D, 'r', 'R'
+		!raw $2C, 't', 'T'
+		!raw $35, 'y', 'Y'
+		!raw $3C, 'u', 'U'
+		!raw $43, 'i', 'I'
+		!raw $44, 'o', 'O'
+		!raw $4D, 'p', 'P'
+		!raw $54, '[', '{'
+		!raw $5B, ']', '}'
+		!raw $58, $00, $00				;CAPSLOCK here!!!!
+		!raw $1C, 'a', 'A'
+		!raw $1B, 's', 'S'
+		!raw $23, 'd', 'D'
+		!raw $2B, 'f', 'F'
+		!raw $34, 'g', 'G'
+		!raw $33, 'h', 'H'
+		!raw $3B, 'j', 'J'
+		!raw $42, 'k', 'K'
+		!raw $4B, 'l', 'L'
+		!raw $4C, ';', ':'
+		!raw $52, $27, $22				; ' and "
+		!raw $5A, $0D, $0D				;ENTER here!!!!!
+		!raw $1A, 'z', 'Z'
+		!raw $22, 'x', 'X'
+		!raw $21, 'c', 'C'
+		!raw $2A, 'v', 'V'
+		!raw $32, 'b', 'B'
+		!raw $31, 'n', 'N'
+		!raw $3A, 'm', 'M'
+		!raw $41, ',', '<'
+		!raw $49, '.', '>'
+		!raw $4A, '/', '?'
+		!raw $29, ' ', ' '
+PS2_SCANCODES_END:
