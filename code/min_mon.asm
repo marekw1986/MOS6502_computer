@@ -108,6 +108,19 @@ INIT_KB:
 	BNE INIT_KB
 INIT_VDP:
 	JSR VDPINIT
+	LDA #<CRTMSG
+	STA BLKIND
+	LDA #>CRTMSG
+	STA BLKIND+1
+	LDA #$00
+	PHA
+	LDA #$80
+	PHA
+	LDA #$B3			;179 data len
+	STA BLKLEN
+	LDA #$00
+	STA BLKLEN + 1
+	JSR VDPWVRAM
 ;	LDA	#<LAB_OKMSG		;point to memory size message (low addr)
 ;	LDY	#>LAB_OKMSG		;point to memory size message (high addr)
 ;	JSR	LAB_18C3	   	;print null terminated string from memory
