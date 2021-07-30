@@ -478,6 +478,7 @@ KBDKRFL = $0606						    ;Keyboard key release flag (byte)
 KBDSFFL = $0607						    ;Keyboard Shift flag (byte)
 KBDOLD	= $0608						    ;Keyboard old data (byte)
 KBDNEW	= $0609						    ;Keyboard new data (byte)
+VDP_CURSOR = $0610						;VDP cursor position (word)
 
 ; This start can be changed to suit your system
     !cpu    6502
@@ -7921,6 +7922,43 @@ VDPRVRAML1
 	DEC BLKLEN+1
 	BNE VDPRVRAML
     RTS
+
+;PUTS CHRACTER FROM A ON SCREEN. HANDLES VDP_CIRSOR VALUE
+VDPPUTC
+	TAX								;Store A in X
+	;Add VDP_CuRSOR to the address of NAME TABLE in VRAM (0x0800)
+	CLC								;Clear carry
+	LDA #$00						;LOW byte of address
+	ADC VDP_CURSOR					;ADD low byte of ADC Cursor
+	STA VDP_MODE					;Send result to VDP
+	LDA #$08						;HIGH byte of address
+	ADC VDP_CURSOR+1				;Add high byte of VDP_CURSOR using carry from the previous calculation
+	ORA #$40
+	STA VDP_MODE					;Address is set
+	TXA
+	STA VDP_DATA					;Now simpluy send the character
+	;So... Now we need to increment VDP_CURSOR
+	INC VDP_CURSOR
+	BNE VDPPUTC1					;if it is not zero, so doesn't rolled our yet, so skit incrementing HIGH byte
+	INC VDP_CURSOR+1
+VDPPUTC1
+	;NOW WE NEED TO CHECK IF VDP_CURSOR IS HIGHTER THAN 960 (0x3C0)
+	LDA #$03
+	CMP VDP_CURSOR+1
+	BCC	VDPPUTC2					;Acumulator (0x03) lower than VDP_CURSOR+1. Range exceeded!
+	BNE VDPPUTC3					;Acumulator (0x03) higher thnan VDP_CURSOR+1. Value in range.
+	;VDP_CURSOR is equal to 0x03. We neex to test lower byte!
+	LDA #$C0
+	CMP VDP_CURSOR
+	BCC	VDPPUTC2					;Acumulator (0xC0) lower than VDP_CURSOR. Range exceeded!
+	BNE VDPPUTC3					;Acumulator (0xC0) higher thnan VDP_CURSOR. Value in range.
+VDPPUTC2
+	LDA #$00						;Reset VDP_CURSOR to 0
+	STA VDP_CURSOR					;Cursor ar top left of the screen
+	STA VDP_CURSOR+1
+VDPPUTC3	
+	RTS
+	
     
 
 ZEROVRAM

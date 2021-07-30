@@ -123,6 +123,11 @@ INIT_VDP:
 	NOP
 	NOP
 	NOP
+	
+	LDA #$00			;Reset VDP_CURSOR to 0
+	STA VDP_CURSOR		;Cursor ar top left of the screen
+	STA VDP_CURSOR+1
+	
 	LDA #<CRTMSG
 	STA BLKIND
 	LDA #>CRTMSG
