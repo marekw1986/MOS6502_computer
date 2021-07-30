@@ -101,26 +101,40 @@ LAB_stlp
 ;	LDA	#<LAB_KBMSG		;point to memory size message (low addr)
 ;	LDY	#>LAB_KBMSG		;point to memory size message (high addr)
 ;	JSR	LAB_18C3	   	;print null terminated string from memory
-INIT_KB:
-	JSR KBDINIT
-	TXA				    ;transfer error code to A
-	CMP #$00
-	BNE INIT_KB
+;INIT_KB:
+;	JSR KBDINIT
+;	TXA				    ;transfer error code to A
+;	CMP #$00
+;	BNE INIT_KB
 INIT_VDP:
 	JSR VDPINIT
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
 	LDA #<CRTMSG
 	STA BLKIND
 	LDA #>CRTMSG
 	STA BLKIND+1
-	LDA #$00
-	PHA
-	LDA #$80
-	PHA
+	LDX #$00
+	LDY #$08
 	LDA #$B3			;179 data len
 	STA BLKLEN
 	LDA #$00
 	STA BLKLEN + 1
 	JSR VDPWVRAM
+
 ;	LDA	#<LAB_OKMSG		;point to memory size message (low addr)
 ;	LDY	#>LAB_OKMSG		;point to memory size message (high addr)
 ;	JSR	LAB_18C3	   	;print null terminated string from memory
@@ -174,20 +188,20 @@ ACIAout_wait
 ; byte in from UART
 
 ACIAin
-;	LDA ACIA_STS       		; get ACIA status
-;	AND #$08        		; mask rx buffer status flag
-;	BEQ	LAB_nobyw			; branch if no byte waiting
+	LDA ACIA_STS       		; get ACIA status
+	AND #$08        		; mask rx buffer status flag
+	BEQ	LAB_nobyw			; branch if no byte waiting
 ;	BEQ	KBDin				; branch if no byte waiting
-;	LDA ACIA_RXD       		; get byte from ACIA data port
-;	AND #$7F				; mask MSB OFF
-;	SEC						; flag byte received
-;	RTS
-;KBDin
-	JSR KBDRCV
-;	CMP #$00
-	BEQ LAB_nobyw
-	SEC
+	LDA ACIA_RXD       		; get byte from ACIA data port
+	AND #$7F				; mask MSB OFF
+	SEC						; flag byte received
 	RTS
+;KBDin
+;	JSR KBDRCV
+;	CMP #$00
+;	BEQ LAB_nobyw
+;	SEC
+;	RTS
 
 LAB_nobyw
 	CLC				; flag no byte received
