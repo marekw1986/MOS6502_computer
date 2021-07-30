@@ -7925,6 +7925,19 @@ VDPRVRAML1
 
 ;PUTS CHRACTER FROM A ON SCREEN. HANDLES VDP_CIRSOR VALUE
 VDPPUTC
+	CMP #$0A						;Check if it is LF
+	BNE VDPPUTC_CHCR				;It is not. Check for next specil character
+	CLC								;It is LF, so we add 24 to VDP_CURSOR
+	LDA #$18						;Load 24 (0x18) to A
+	ADC VDP_CURSOR					;Add it LSB of VDP_CURSOR
+	LDA #$00						;Kiad 0 to A
+	ADC VDP_CURSOR					;Add it to MSB of VDP_CURSOR using carry from previous calculation
+	JMP VDPPUTC_CHECKCURSOR			;Now we need to check if new value of VDP_CURSOR is vlid
+VDPPUTC_CHCR	
+	CMP #$0D						;Check if it is CR
+	BNE VDPPUTC_SEND				;It is not. Normal chracter. Just send it.
+	LDA #$20						;Otherwise make it SPACE. THIS IS TMEMPORAL SOLUTION
+VDPPUTC_SEND
 	TAX								;Store A in X
 	;Add VDP_CuRSOR to the address of NAME TABLE in VRAM (0x0800)
 	CLC								;Clear carry
@@ -7939,24 +7952,24 @@ VDPPUTC
 	STA VDP_DATA					;Now simpluy send the character
 	;So... Now we need to increment VDP_CURSOR
 	INC VDP_CURSOR
-	BNE VDPPUTC1					;if it is not zero, so doesn't rolled our yet, so skit incrementing HIGH byte
+	BNE VDPPUTC_CHECKCURSOR			;if it is not zero, so doesn't rolled our yet, so skip incrementing HIGH byte
 	INC VDP_CURSOR+1
-VDPPUTC1
+VDPPUTC_CHECKCURSOR
 	;NOW WE NEED TO CHECK IF VDP_CURSOR IS HIGHTER THAN 960 (0x3C0)
 	LDA #$03
 	CMP VDP_CURSOR+1
-	BCC	VDPPUTC2					;Acumulator (0x03) lower than VDP_CURSOR+1. Range exceeded!
-	BNE VDPPUTC3					;Acumulator (0x03) higher thnan VDP_CURSOR+1. Value in range.
+	BCC	VDPUTC_EXCEEDED				;Acumulator (0x03) lower than VDP_CURSOR+1. Range exceeded!
+	BNE VDPPUTC_RET					;Acumulator (0x03) higher thnan VDP_CURSOR+1. Value in range. Just return
 	;VDP_CURSOR is equal to 0x03. We neex to test lower byte!
 	LDA #$C0
 	CMP VDP_CURSOR
-	BCC	VDPPUTC2					;Acumulator (0xC0) lower than VDP_CURSOR. Range exceeded!
-	BNE VDPPUTC3					;Acumulator (0xC0) higher thnan VDP_CURSOR. Value in range.
-VDPPUTC2
+	BCC	VDPUTC_EXCEEDED				;Acumulator (0xC0) lower than VDP_CURSOR. Range exceeded!
+	BNE VDPPUTC_RET					;Acumulator (0xC0) higher thnan VDP_CURSOR. Value in range. Just return.
+VDPUTC_EXCEEDED
 	LDA #$00						;Reset VDP_CURSOR to 0
 	STA VDP_CURSOR					;Cursor ar top left of the screen
 	STA VDP_CURSOR+1
-VDPPUTC3	
+VDPPUTC_RET	
 	RTS
 	
     
