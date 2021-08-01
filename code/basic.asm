@@ -464,6 +464,7 @@ KBD_CMD = $A101
 ;$0030 to $0037 portion of zero page can be used (added by MW)
 BLKIND	= $30						    ;BLK index (word)
 BLKLEN  = $32							;BLK length (word)
+TEMP	= $34							;TEMP varible (word)
 
 ;	* = $0400
 ;512 byter of CF card buffer (added by MW)
@@ -7838,7 +7839,14 @@ VDPINIT
     STA VDP_MODE
     
     ;Clear VRAM
-    JSR ZEROVRAM
+    ;JSR ZEROVRAM
+    LDX #$00					  ;ZERO VRAM from the beginning
+    LDY #$00
+    LDA #$00					  ;ZERO 16kB
+    STA BLKLEN				 	  ;LSB
+    LDA #$40
+    STA BLKLEN+1				  ;MSB
+    JSR VDPZEROVRAM
     
     ;INITiALIZE VRAM
     LDA #<CHARS
@@ -7902,26 +7910,62 @@ VDPWVRAM3
 	BNE VDPWVRAM3
 VDPWVRAM4
 	RTS
-        
-;RAM ADDRES IN BLKIND, VRAM PASSED BY STACK (LSB FIRST), DATA LENGTH BLKLEN
+	
+	
+;RAM ADDRESS IN BLKIND, VRAM X (LSB) AND Y (MSB), DATA LENGTH BLKLEN               
 VDPRVRAM
-    PLA
+    TXA
     STA VDP_MODE
-    PLA
+    TYA
     STA VDP_MODE
     LDY #$00
-VDPRVRAML
-    LDA (BLKIND), Y
-    STA VDP_DATA
-    INC BLKIND
-    BNE VDPRVRAML1
+    LDX BLKLEN+1
+    BEQ VDPWVRAM2
+VDPRVRAM1
+    LDA VDP_DATA
+    STA (BLKIND), Y
+    NOP
+    NOP
+    INY
+    BNE VDPWVRAM1
     INC BLKIND+1
-VDPRVRAML1    
-	DEC BLKLEN
-	BNE VDPRVRAML
-	DEC BLKLEN+1
-	BNE VDPRVRAML
-    RTS
+    DEX
+    BNE VDPWVRAM1
+VDPRVRAM2
+	LDX BLKLEN
+	BEQ VDPWVRAM4
+VDPRVRAM3
+	LDA VDP_DATA
+	STA (BLKIND), Y
+	NOP
+	NOP
+	INY
+	DEX
+	BNE VDPWVRAM3
+VDPRVRAM4
+	RTS
+	
+	
+        
+;RAM ADDRES IN BLKIND, VRAM PASSED BY STACK (LSB FIRST), DATA LENGTH BLKLEN
+;VDPRVRAM
+;    PLA
+;    STA VDP_MODE
+;    PLA
+;    STA VDP_MODE
+;    LDY #$00
+;VDPRVRAML
+;    LDA (BLKIND), Y
+;    STA VDP_DATA
+;    INC BLKIND
+;    BNE VDPRVRAML1
+;    INC BLKIND+1
+;VDPRVRAML1    
+;	DEC BLKLEN
+;	BNE VDPRVRAML
+;	DEC BLKLEN+1
+;	BNE VDPRVRAML
+;   RTS
 
 ;PUTS CHRACTER FROM A ON SCREEN. HANDLES VDP_CIRSOR VALUE
 VDPPUTC
@@ -7938,7 +7982,7 @@ VDPPUTC_CHCR
 	BNE VDPPUTC_SEND				;It is not. Normal chracter. Just send it.
 	LDA #$20						;Otherwise make it SPACE. THIS IS TMEMPORAL SOLUTION
 VDPPUTC_SEND
-	TAX								;Store A in X
+	PHA								;Store A in stack
 	;Add VDP_CuRSOR to the address of NAME TABLE in VRAM (0x0800)
 	CLC								;Clear carry
 	LDA #$00						;LOW byte of address
@@ -7948,7 +7992,7 @@ VDPPUTC_SEND
 	ADC VDP_CURSOR+1				;Add high byte of VDP_CURSOR using carry from the previous calculation
 	ORA #$40
 	STA VDP_MODE					;Address is set
-	TXA
+	PLA								;Pull character from stack 
 	STA VDP_DATA					;Now simpluy send the character
 	;So... Now we need to increment VDP_CURSOR
 	INC VDP_CURSOR
@@ -7969,33 +8013,55 @@ VDPUTC_EXCEEDED
 	LDA #$00						;Reset VDP_CURSOR to 0
 	STA VDP_CURSOR					;Cursor ar top left of the screen
 	STA VDP_CURSOR+1
+	JSR VDPCLS
 VDPPUTC_RET	
 	RTS
 	
+	
+VDPCLS
+    LDX #$00					  ;ZERO VRAM from 0x0800
+    LDY #$08
+    LDA #$C0					  ;ZERO 960 bytes (0x03C0)
+    STA BLKLEN				 	  ;LSB
+    LDA #$03
+    STA BLKLEN+1				  ;MSB
+    JSR VDPZEROVRAM
+	RTS		
     
 
-ZEROVRAM
-	LDA #$00
-	STA VDP_MODE
-	NOP
-	NOP
-	LDA #$40
-	STA VDP_MODE
-	NOP
-	NOP
-	LDX #$FF
-	LDY #$40
-ZEROVRAML
+;VRAM X (LSB) AND Y (MSB), DATA LENGTH BLKLEN               
+VDPZEROVRAM
+    TXA
+    STA VDP_MODE
+    TYA
+    ORA #$40
+    STA VDP_MODE
+    LDY #$00
+    LDX BLKLEN+1
+    BEQ VDPZEROVRAM2
+VDPZEROVRAM1
+    LDA #$00
+    STA VDP_DATA
+    NOP
+    NOP
+    INY
+    BNE VDPZEROVRAM1
+    INC BLKIND+1
+    DEX
+    BNE VDPZEROVRAM1
+VDPZEROVRAM2
+	LDX BLKLEN
+	BEQ VDPZEROVRAM4
+VDPZEROVRAM3
 	LDA #$00
 	STA VDP_DATA
+	NOP
+	NOP
+	INY
 	DEX
-	BNE ZEROVRAML
-	DEY
-	BEQ ZEROVRAMLRET
-	LDX #$FF
-	JMP ZEROVRAML
-ZEROVRAMLRET
-	RTS	
+	BNE VDPZEROVRAM3
+VDPZEROVRAM4
+	RTS
     
 
 ;KBD routines

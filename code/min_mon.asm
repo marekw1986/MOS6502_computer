@@ -128,17 +128,17 @@ INIT_VDP:
 	STA VDP_CURSOR		;Cursor ar top left of the screen
 	STA VDP_CURSOR+1
 	
-	LDA #<CRTMSG
-	STA BLKIND
-	LDA #>CRTMSG
-	STA BLKIND+1
-	LDX #$00
-	LDY #$08
-	LDA #$B3			;179 data len
-	STA BLKLEN
-	LDA #$00
-	STA BLKLEN + 1
-	JSR VDPWVRAM
+	;LDA #<CRTMSG
+	;STA BLKIND
+	;LDA #>CRTMSG
+	;STA BLKIND+1
+	;LDX #$00
+	;LDY #$08
+	;LDA #$B3			;179 data len
+	;STA BLKLEN
+	;LDA #$00
+	;STA BLKLEN + 1
+	;JSR VDPWVRAM
 
 ;	LDA	#<LAB_OKMSG		;point to memory size message (low addr)
 ;	LDY	#>LAB_OKMSG		;point to memory size message (high addr)
@@ -188,6 +188,21 @@ ACIAout_wait
 	BEQ ACIAout_wait		; loop if tx buffer full
 	PLA         			; restore A
 	STA ACIA_TXD       		; save byte to ACIA data port
+	;SAVE CONTEXT!
+	STA TEMP				; We nedd to reserve A first. W use TEMP for that
+	PHA
+	TXA
+	PHA
+	TYA
+	PHA
+	LDA TEMP
+	JSR VDPPUTC
+	;RESTORE CONTEXT
+	PLA
+	TAY
+	PLA
+	TAX
+	PLA
 	RTS
 
 ; byte in from UART
