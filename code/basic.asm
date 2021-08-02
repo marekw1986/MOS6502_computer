@@ -451,7 +451,7 @@ CFREG6 = CFBASE+6	;SECTOR ADDRESS LBA 3 [24:27 (LSB)]
 CFREG7 = CFBASE+7	;READ: STATUS, WRITE: COMMAND
 
 ; VDP REGS
-VDP_DATA = $A400
+VDP_DATA = $AC00
 VDP_MODE = VDP_DATA + 1
 
 ; KBD REGS
@@ -464,6 +464,7 @@ KBD_CMD = $A101
 ;$0030 to $0037 portion of zero page can be used (added by MW)
 BLKIND	= $30						    ;BLK index (word)
 BLKLEN  = $32							;BLK length (word)
+TEMP	= $34							;TEMP varible (word)
 
 ;	* = $0400
 ;512 byter of CF card buffer (added by MW)
@@ -478,6 +479,7 @@ KBDKRFL = $0606						    ;Keyboard key release flag (byte)
 KBDSFFL = $0607						    ;Keyboard Shift flag (byte)
 KBDOLD	= $0608						    ;Keyboard old data (byte)
 KBDNEW	= $0609						    ;Keyboard new data (byte)
+VDP_CURSOR = $0610						;VDP cursor position (word)
 
 ; This start can be changed to suit your system
     !cpu    6502
@@ -7820,119 +7822,328 @@ VDPINIT
     STA VDP_MODE
     LDA #$80                      ;SELECT REG0
     STA VDP_MODE
+    
     LDA #$D0                     ;REG1 (16K, ENABLE DISP, DISABLE INT)
     STA VDP_MODE
     LDA #$81                      ;SELECT REG1
     STA VDP_MODE
+    
     LDA #$02                      ;REG2 (ADDRESS OF NAME TABLE IN VRAM = 0x0800)
     STA VDP_MODE
     LDA #$82                      ;SELECT REG2
     STA VDP_MODE
+    
     LDA #$00                      ;REG4 (ADDRESS OF PATTERN TABLE IN VRAM = 0x0000)
     STA VDP_MODE
     LDA #$84                      ;SELECT REG4
     STA VDP_MODE
-    LDA #$20                      ;REG5 (ADDRESS OF SPRITE ATTRIBUTE TABLE IN VRAM = 0x1000)
-    STA VDP_MODE
-    LDA #$85                      ;SELECT REG5
-    STA VDP_MODE
-    LDA #$00                      ;REG6 (ADDRESS OF SPRITE PATTERN TABLE IN VRAM = 0x0000)
-    STA VDP_MODE
-    LDA #$86                      ;SELECT REG6
-    STA VDP_MODE
-    LDA #$F5                     ;REG7 (WHITE TEXT ON LIGHT BLUE BACKGROUND)
-    STA VDP_MODE
-    LDA #$87                      ;SELECT REG7
-    STA VDP_MODE
+    
+    ;Clear VRAM
+    ;JSR ZEROVRAM
+    LDX #$00					  ;ZERO VRAM from the beginning
+    LDY #$00
+    LDA #$00					  ;ZERO 16kB
+    STA BLKLEN				 	  ;LSB
+    LDA #$40
+    STA BLKLEN+1				  ;MSB
+    JSR VDPZEROVRAM
+    
     ;INITiALIZE VRAM
     LDA #<CHARS
     STA BLKIND
     LDA #>CHARS
     STA BLKIND+1
 ;   0000H + (32*8)
-    LDA #<(32*8)
-    PHA
-    LDA #>(32*8)
-    PHA
+    LDX #<(32*8)
+    LDY #>(32*8)
 	LDA #<(CHARS_END-CHARS)
 	STA BLKLEN
 	LDA #>(CHARS_END-CHARS)
 	STA BLKLEN+1
     JSR VDPWVRAM
+    
+    ;LDA #$20                      ;REG5 (ADDRESS OF SPRITE ATTRIBUTE TABLE IN VRAM = 0x1000)
+    ;STA VDP_MODE
+    ;LDA #$85                      ;SELECT REG5
+    ;STA VDP_MODE
+    ;LDA #$00                      ;REG6 (ADDRESS OF SPRITE PATTERN TABLE IN VRAM = 0x0000)
+    ;STA VDP_MODE
+    ;LDA #$86                      ;SELECT REG6
+    ;STA VDP_MODE
+    
+    LDA #$F1                     ;REG7 (WHITE TEXT ON BLACK BACKGROUND)
+    STA VDP_MODE
+    LDA #$87                      ;SELECT REG7
+    STA VDP_MODE
     RTS
 
-;RAM ADDRESS IN BLKIND, VRAM PASSED BY STACK (LSB FIRST), DATA LENGTH BLKLEN               
+;RAM ADDRESS IN BLKIND, VRAM X (LSB) AND Y (MSB), DATA LENGTH BLKLEN               
 VDPWVRAM
-    PLA
+    TXA
     STA VDP_MODE
-    PLA
-    ORA #$80
+    TYA
+    ORA #$40
     STA VDP_MODE
     LDY #$00
-VDPWVRAML
+    LDX BLKLEN+1
+    BEQ VDPWVRAM2
+VDPWVRAM1
     LDA (BLKIND), Y
     STA VDP_DATA
-    INC BLKIND
-    BNE VDPWVRAML1
+    INY
+    BNE VDPWVRAM1
     INC BLKIND+1
-VDPWVRAML1
-	DEC BLKLEN
-	BNE VDPWVRAML
-	DEC BLKLEN+1
-	BNE VDPWVRAML
-    RTS
-        
-;RAM ADDRES IN BLKIND, VRAM PASSED BY STACK (LSB FIRST), DATA LENGTH BLKLEN
+    DEX
+    BNE VDPWVRAM1
+VDPWVRAM2
+	LDX BLKLEN
+	BEQ VDPWVRAM4
+VDPWVRAM3
+	LDA (BLKIND), Y
+	STA VDP_DATA
+	INY
+	DEX
+	BNE VDPWVRAM3
+VDPWVRAM4
+	RTS
+	
+	
+;RAM ADDRESS IN BLKIND, VRAM X (LSB) AND Y (MSB), DATA LENGTH BLKLEN               
 VDPRVRAM
-    PLA
+    TXA
     STA VDP_MODE
-    PLA
+    TYA
     STA VDP_MODE
     LDY #$00
-VDPRVRAML
-    LDA (BLKIND), Y
-    STA VDP_DATA
-    INC BLKIND
-    BNE VDPRVRAML1
+    LDX BLKLEN+1
+    BEQ VDPRVRAM2
+VDPRVRAM1
+    LDA VDP_DATA
+    STA (BLKIND), Y
+    INY
+    BNE VDPRVRAM1
     INC BLKIND+1
-VDPRVRAML1    
-	DEC BLKLEN
-	BNE VDPRVRAML
-	DEC BLKLEN+1
-	BNE VDPRVRAML
-    RTS
+    DEX
+    BNE VDPRVRAM1
+VDPRVRAM2
+	LDX BLKLEN
+	BEQ VDPRVRAM4
+VDPRVRAM3
+	LDA VDP_DATA
+	STA (BLKIND), Y
+	INY
+	DEX
+	BNE VDPRVRAM3
+VDPRVRAM4
+	RTS	
+
+
+;PUTS CHRACTER FROM A ON SCREEN. HANDLES VDP_CIRSOR VALUE
+VDPPUTC
+	CMP #$0A						;Check if it is LF
+	BNE VDPPUTC_CHCR				;It is not. Check for next specil character
+	CLC								;It is LF, so we add 24 to VDP_CURSOR
+	LDA #$18						;Load 24 (0x18) to A
+	ADC VDP_CURSOR					;Add it LSB of VDP_CURSOR
+	LDA #$00						;Kiad 0 to A
+	ADC VDP_CURSOR					;Add it to MSB of VDP_CURSOR using carry from previous calculation
+	JMP VDPPUTC_CHECKCURSOR			;Now we need to check if new value of VDP_CURSOR is vlid
+VDPPUTC_CHCR	
+	CMP #$0D						;Check if it is CR
+	BNE VDPPUTC_SEND				;It is not. Normal chracter. Just send it.
+	JSR DIV40						;Divide VDP_CURSOR by 40
+	INC VDP_CURSOR					;Increment VDP_CURSOR by 1, next line
+	JSR MUL40						;Multiply by 40
+	RTS
+	;LDA #$20						;Otherwise make it SPACE. THIS IS TMEMPORAL SOLUTION
+VDPPUTC_SEND
+	PHA								;Store A in stack
+	;Add VDP_CuRSOR to the address of NAME TABLE in VRAM (0x0800)
+	CLC								;Clear carry
+	LDA #$00						;LOW byte of address
+	ADC VDP_CURSOR					;ADD low byte of ADC Cursor
+	STA VDP_MODE					;Send result to VDP
+	LDA #$08						;HIGH byte of address
+	ADC VDP_CURSOR+1				;Add high byte of VDP_CURSOR using carry from the previous calculation
+	ORA #$40
+	STA VDP_MODE					;Address is set
+	PLA								;Pull character from stack 
+	STA VDP_DATA					;Now simpluy send the character
+	;So... Now we need to increment VDP_CURSOR
+	INC VDP_CURSOR
+	BNE VDPPUTC_CHECKCURSOR			;if it is not zero, so doesn't rolled our yet, so skip incrementing HIGH byte
+	INC VDP_CURSOR+1
+VDPPUTC_CHECKCURSOR
+	;NOW WE NEED TO CHECK IF VDP_CURSOR IS HIGHTER THAN 960 (0x3C0)
+	LDA #$03
+	CMP VDP_CURSOR+1
+	BCC	VDPUTC_EXCEEDED				;Acumulator (0x03) lower than VDP_CURSOR+1. Range exceeded!
+	BNE VDPPUTC_RET					;Acumulator (0x03) higher thnan VDP_CURSOR+1. Value in range. Just return
+	;VDP_CURSOR is equal to 0x03. We neex to test lower byte!
+	LDA #$C0
+	CMP VDP_CURSOR
+	BCC	VDPUTC_EXCEEDED				;Acumulator (0xC0) lower than VDP_CURSOR. Range exceeded!
+	BNE VDPPUTC_RET					;Acumulator (0xC0) higher thnan VDP_CURSOR. Value in range. Just return.
+VDPUTC_EXCEEDED
+	;LDA #$00						;Reset VDP_CURSOR to 0
+	;STA VDP_CURSOR					;Cursor ar top left of the screen
+	;STA VDP_CURSOR+1
+	;JSR VDPCLS
+	JSR VDPSCROLLUP
+	LDA #$98
+	STA VDP_CURSOR
+	LDA #$03
+	STA VDP_CURSOR+1
+VDPPUTC_RET	
+	RTS
+	
+	
+VDPCLS
+    LDX #$00					  ;ZERO VRAM from 0x0800
+    LDY #$08
+    LDA #$C0					  ;ZERO 960 bytes (0x03C0)
+    STA BLKLEN				 	  ;LSB
+    LDA #$03
+    STA BLKLEN+1				  ;MSB
+    JSR VDPZEROVRAM
+	RTS		
     
 
-ZEROVRAM
-	LDA #$00
-	STA VDP_MODE
-	NOP
-	NOP
-	LDA #$40
-	STA VDP_MODE
-	NOP
-	NOP
-	LDA #$00
-	STA BLKLEN
-	LDA #$40
-	STA BLKLEN+1
-ZEROVRAML
+;VRAM X (LSB) AND Y (MSB), DATA LENGTH BLKLEN               
+VDPZEROVRAM
+    TXA
+    STA VDP_MODE
+    TYA
+    ORA #$40
+    STA VDP_MODE
+    LDY #$00
+    LDX BLKLEN+1
+    BEQ VDPZEROVRAM2
+VDPZEROVRAM1
+    LDA #$00
+    STA VDP_DATA
+    INY
+    BNE VDPZEROVRAM1
+    INC BLKIND+1
+    DEX
+    BNE VDPZEROVRAM1
+VDPZEROVRAM2
+	LDX BLKLEN
+	BEQ VDPZEROVRAM4
+VDPZEROVRAM3
 	LDA #$00
 	STA VDP_DATA
-	NOP
-	NOP
-	NOP
-	NOP
-	NOP
-	NOP
-	NOP
-	NOP
-	DEC BLKLEN
-	BNE ZEROVRAML
-	DEC BLKLEN+1
-	BNE ZEROVRAML
-	RTS	
-    
+	INY
+	DEX
+	BNE VDPZEROVRAM3
+VDPZEROVRAM4
+	RTS
+	
+VDPSCROLLUP
+	;Move 12 lines
+	;Read them first
+	LDA #<BLKDAT
+	STA BLKIND
+	LDA #>BLKDAT
+	STA BLKIND+1
+	LDX #$28
+	LDY #$08
+	LDA #$E0
+	STA BLKLEN
+	LDA #$01
+	STA BLKLEN+1
+	JSR VDPRVRAM
+	;Write move lines from buffer to the beginning of the screen
+	LDA #<BLKDAT
+	STA BLKIND
+	LDA #>BLKDAT
+	STA BLKIND+1
+	LDX #$00
+	LDY	#$08
+	LDA #$E0
+	STA BLKLEN
+	LDA #$01
+	STA BLKLEN+1
+	JSR VDPWVRAM
+	;Move remaining 11 lines
+	;Read them first
+	LDA #<BLKDAT
+	STA BLKIND
+	LDA #>BLKDAT
+	STA BLKIND+1
+	LDX #$08
+	LDY #$0A
+	LDA #$B8
+	STA BLKLEN
+	LDA #$01
+	STA BLKLEN+1
+	JSR VDPRVRAM
+	;Write move lines from buffer to the beginning of the screen
+	LDA #<BLKDAT
+	STA BLKIND
+	LDA #>BLKDAT
+	STA BLKIND+1
+	LDX #$E0
+	LDY	#$09
+	LDA #$B8
+	STA BLKLEN
+	LDA #$01
+	STA BLKLEN+1
+	JSR VDPWVRAM
+	;Clear last line		
+    LDX #$98					  ;ZERO VRAM from 0x0B98
+    LDY #$0B
+    LDA #$28					  ;ZERO 40 bytes (0x28)
+    STA BLKLEN				 	  ;LSB
+    LDA #$00
+    STA BLKLEN+1				  ;MSB
+    JSR VDPZEROVRAM	
+	;Return
+	RTS
+
+; 16-bit unsigned division by 40 routine
+;   TOS /= 40, A = remainder, Y = 0
+;
+DIV40
+	LDA  #0         			;remainder
+	LDY  #16        			;loop counter
+DIV40B
+	ASL  VDP_CURSOR        		;VDP_CURSOR is gradually replaced
+	ROL  VDP_CURSOR+1      		;with the quotient
+	ROL             			;A is gradually replaced
+								;with the remainder
+	CMP  #40        			;partial remainder >= 40?
+	BCC  DIV40C
+	SBC  #40        			;yes: update partial
+								;remainder, set low bit
+	INC  VDP_CURSOR        			;in partial quotient
+DIV40C
+	DEY 
+	BNE  DIV40B     			;loop 16 times
+	RTS 
+	
+
+MUL40
+	LDX VDP_CURSOR				;Load current value of VDP_CURSOR (after div by 40) to X
+	BEQ MUL40Z					;It is zero, so VDP_CURSOR = 0 nand return
+	LDA #$00
+	STA VDP_CURSOR
+MUL40L
+	CLC
+	LDA #$28
+	ADC VDP_CURSOR
+	STA VDP_CURSOR
+	LDA #$00
+	ADC VDP_CURSOR+1
+	STA VDP_CURSOR+1
+	DEX
+	BNE MUL40L
+	RTS
+MUL40Z:
+	LDA #$00
+	STA VDP_CURSOR
+	RTS
+	
 
 ;KBD routines
 ;KBDINIT - initializes 8042/8242 PS/2 keyboard controller
@@ -9257,6 +9468,9 @@ CHARS:
         !raw $00,$10,$38,$6C,$C6,$C6,$FE,$00 ;DEL
         ;
 CHARS_END: 
+
+CRTMSG:
+		!raw "Two roads diverged in a yellow wood, And sorry I could not travel both And be one traveler, long I stood And looked down one as far as I could To where it bent in the undergrowth;"
 
 ;Set 1
 PS2_SCANCODES:
