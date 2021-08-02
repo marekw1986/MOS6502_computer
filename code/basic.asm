@@ -7951,7 +7951,11 @@ VDPPUTC
 VDPPUTC_CHCR	
 	CMP #$0D						;Check if it is CR
 	BNE VDPPUTC_SEND				;It is not. Normal chracter. Just send it.
-	LDA #$20						;Otherwise make it SPACE. THIS IS TMEMPORAL SOLUTION
+	JSR DIV40						;Divide VDP_CURSOR by 40
+	INC VDP_CURSOR					;Increment VDP_CURSOR by 1, next line
+	JSR MUL40						;Multiply by 40
+	RTS
+	;LDA #$20						;Otherwise make it SPACE. THIS IS TMEMPORAL SOLUTION
 VDPPUTC_SEND
 	PHA								;Store A in stack
 	;Add VDP_CuRSOR to the address of NAME TABLE in VRAM (0x0800)
@@ -8096,7 +8100,50 @@ VDPSCROLLUP
     JSR VDPZEROVRAM	
 	;Return
 	RTS
-    
+
+; 16-bit unsigned division by 40 routine
+;   TOS /= 40, A = remainder, Y = 0
+;
+DIV40
+	LDA  #0         			;remainder
+	LDY  #16        			;loop counter
+DIV40B
+	ASL  VDP_CURSOR        		;VDP_CURSOR is gradually replaced
+	ROL  VDP_CURSOR+1      		;with the quotient
+	ROL             			;A is gradually replaced
+								;with the remainder
+	CMP  #40        			;partial remainder >= 40?
+	BCC  DIV40C
+	SBC  #40        			;yes: update partial
+								;remainder, set low bit
+	INC  VDP_CURSOR        			;in partial quotient
+DIV40C
+	DEY 
+	BNE  DIV40B     			;loop 16 times
+	RTS 
+	
+
+MUL40
+	LDX VDP_CURSOR				;Load current value of VDP_CURSOR (after div by 40) to X
+	BEQ MUL40Z					;It is zero, so VDP_CURSOR = 0 nand return
+	LDA #$00
+	STA VDP_CURSOR
+MUL40L
+	CLC
+	LDA #$28
+	ADC VDP_CURSOR
+	STA VDP_CURSOR
+	LDA #$00
+	ADC VDP_CURSOR+1
+	STA VDP_CURSOR+1
+	DEX
+	BNE MUL40L
+	RTS
+MUL40Z:
+	LDA #$00
+	STA VDP_CURSOR
+	RTS
+	
 
 ;KBD routines
 ;KBDINIT - initializes 8042/8242 PS/2 keyboard controller
