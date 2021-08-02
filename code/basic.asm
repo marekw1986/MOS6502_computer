@@ -7986,9 +7986,9 @@ VDPUTC_EXCEEDED
 	;STA VDP_CURSOR+1
 	;JSR VDPCLS
 	JSR VDPSCROLLUP
-	LDA #$28
+	LDA #$98
 	STA VDP_CURSOR
-	LDA #$00
+	LDA #$03
 	STA VDP_CURSOR+1
 VDPPUTC_RET	
 	RTS
@@ -8036,32 +8036,64 @@ VDPZEROVRAM4
 	RTS
 	
 VDPSCROLLUP
-	;Copy last line from VRAM to RAM buffer
+	;Move 12 lines
+	;Read them first
 	LDA #<BLKDAT
 	STA BLKIND
 	LDA #>BLKDAT
 	STA BLKIND+1
-	LDX #$98
-	LDY #$0B
-	LDA #$28
+	LDX #$28
+	LDY #$08
+	LDA #$E0
 	STA BLKLEN
-	LDA #$00
+	LDA #$01
 	STA BLKLEN+1
 	JSR VDPRVRAM
-	;Clear screen
-	JSR VDPCLS
-	;Write last line from buffer to first line in VRAM
+	;Write move lines from buffer to the beginning of the screen
 	LDA #<BLKDAT
 	STA BLKIND
 	LDA #>BLKDAT
 	STA BLKIND+1
 	LDX #$00
 	LDY	#$08
-	LDA #$28
+	LDA #$E0
 	STA BLKLEN
-	LDA #$00
+	LDA #$01
 	STA BLKLEN+1
-	JSR VDPWVRAM	
+	JSR VDPWVRAM
+	;Move remaining 11 lines
+	;Read them first
+	LDA #<BLKDAT
+	STA BLKIND
+	LDA #>BLKDAT
+	STA BLKIND+1
+	LDX #$08
+	LDY #$0A
+	LDA #$B8
+	STA BLKLEN
+	LDA #$01
+	STA BLKLEN+1
+	JSR VDPRVRAM
+	;Write move lines from buffer to the beginning of the screen
+	LDA #<BLKDAT
+	STA BLKIND
+	LDA #>BLKDAT
+	STA BLKIND+1
+	LDX #$E0
+	LDY	#$09
+	LDA #$B8
+	STA BLKLEN
+	LDA #$01
+	STA BLKLEN+1
+	JSR VDPWVRAM
+	;Clear last line		
+    LDX #$98					  ;ZERO VRAM from 0x0B98
+    LDY #$0B
+    LDA #$28					  ;ZERO 40 bytes (0x28)
+    STA BLKLEN				 	  ;LSB
+    LDA #$00
+    STA BLKLEN+1				  ;MSB
+    JSR VDPZEROVRAM	
 	;Return
 	RTS
     
