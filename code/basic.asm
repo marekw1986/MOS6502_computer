@@ -7954,7 +7954,7 @@ VDPPUTC_CHCR
 	JSR DIV40						;Divide VDP_CURSOR by 40
 	INC VDP_CURSOR					;Increment VDP_CURSOR by 1, next line
 	JSR MUL40						;Multiply by 40
-	RTS
+	JMP VDPPUTC_CHECKCURSOR
 	;LDA #$20						;Otherwise make it SPACE. THIS IS TMEMPORAL SOLUTION
 VDPPUTC_SEND
 	PHA								;Store A in stack
