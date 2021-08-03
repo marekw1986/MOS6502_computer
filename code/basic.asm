@@ -7940,8 +7940,22 @@ VDPRVRAM4
 
 ;PUTS CHRACTER FROM A ON SCREEN. HANDLES VDP_CIRSOR VALUE
 VDPPUTC
+	CMP #$08						;Check if it is BACKSPCE
+	BNE VDPPUTC_CHLF				;It is not. Check for next special character
+	LDA VDP_CURSOR
+	BNE VDPPUTC_BSDEC				;It is not zero, we can decrement
+	LDA VDP_CURSOR+1
+	BNE VDPPUTC_BSDEC				;It is not zero, we can decrement
+	RTS								;It is zero. Just return and do nothong
+VDPPUTC_BSDEC
+	JSR VDPCLCURSOR
+	DEC VDP_CURSOR
+	BNE VDPPUTC_RET
+	DEC VDP_CURSOR+1
+	JMP VDPPUTC_RET
+VDPPUTC_CHLF
 	CMP #$0A						;Check if it is LF
-	BNE VDPPUTC_CHCR				;It is not. Check for next specil character
+	BNE VDPPUTC_CHCR				;It is not. Check for next special character
 	CLC								;It is LF, so we add 24 to VDP_CURSOR
 	LDA #$18						;Load 24 (0x18) to A
 	ADC VDP_CURSOR					;Add it LSB of VDP_CURSOR
@@ -7951,6 +7965,8 @@ VDPPUTC
 VDPPUTC_CHCR	
 	CMP #$0D						;Check if it is CR
 	BNE VDPPUTC_SEND				;It is not. Normal chracter. Just send it.
+	;First clear cursor on screen
+	JSR VDPCLCURSOR
 	JSR DIV40						;Divide VDP_CURSOR by 40
 	INC VDP_CURSOR					;Increment VDP_CURSOR by 1, next line
 	JSR MUL40						;Multiply by 40
@@ -7995,7 +8011,32 @@ VDPUTC_EXCEEDED
 	LDA #$03
 	STA VDP_CURSOR+1
 VDPPUTC_RET	
+	;Before we return, we need to put cursor in its new place
+	CLC								;Clear carry
+	LDA #$00						;LOW byte of address
+	ADC VDP_CURSOR					;ADD low byte of ADC Cursor
+	STA VDP_MODE					;Send result to VDP
+	LDA #$08						;HIGH byte of address
+	ADC VDP_CURSOR+1				;Add high byte of VDP_CURSOR using carry from the previous calculation
+	ORA #$40
+	STA VDP_MODE					;Address is set
+	LDA #$5F						;Cursor is '_' character
+	STA VDP_DATA					;Now simpluy send the character
 	RTS
+	
+
+VDPCLCURSOR
+	CLC								;Clear carry
+	LDA #$00						;LOW byte of address
+	ADC VDP_CURSOR					;ADD low byte of ADC Cursor
+	STA VDP_MODE					;Send result to VDP
+	LDA #$08						;HIGH byte of address
+	ADC VDP_CURSOR+1				;Add high byte of VDP_CURSOR using carry from the previous calculation
+	ORA #$40
+	STA VDP_MODE					;Address is set
+	LDA #$20						;Cursor is ' ' character
+	STA VDP_DATA					;Now simpluy send the character	
+	RTS	
 	
 	
 VDPCLS
