@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="7.2.0">
+<eagle version="7.7.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -134,6 +134,12 @@
 <layer number="153" name="FabDoc1" color="7" fill="1" visible="no" active="yes"/>
 <layer number="154" name="FabDoc2" color="7" fill="1" visible="no" active="yes"/>
 <layer number="155" name="FabDoc3" color="7" fill="1" visible="no" active="yes"/>
+<layer number="156" name="gesam-Maß" color="1" fill="7" visible="no" active="no"/>
+<layer number="157" name="FaceMchng" color="3" fill="1" visible="no" active="no"/>
+<layer number="158" name="FaceMMeas" color="3" fill="1" visible="no" active="no"/>
+<layer number="159" name="Geh-Bear2" color="1" fill="7" visible="no" active="no"/>
+<layer number="160" name="Topologie" color="9" fill="1" visible="no" active="no"/>
+<layer number="161" name="tomplace2" color="7" fill="1" visible="no" active="no"/>
 <layer number="191" name="mNets" color="7" fill="1" visible="no" active="yes"/>
 <layer number="192" name="mBusses" color="7" fill="1" visible="no" active="yes"/>
 <layer number="193" name="mPins" color="7" fill="1" visible="no" active="yes"/>
@@ -179,6 +185,8 @@
 <layer number="249" name="Edge" color="7" fill="1" visible="no" active="yes"/>
 <layer number="250" name="Descript" color="3" fill="1" visible="no" active="no"/>
 <layer number="251" name="SMDround" color="12" fill="11" visible="no" active="no"/>
+<layer number="252" name="BR-BS" color="7" fill="1" visible="no" active="no"/>
+<layer number="253" name="BR-LS" color="7" fill="1" visible="no" active="no"/>
 <layer number="254" name="cooling" color="7" fill="1" visible="no" active="yes"/>
 <layer number="255" name="HELP" color="7" fill="1" visible="no" active="yes"/>
 </layers>
@@ -2085,46 +2093,6 @@ Source: http://www.produktinfo.conrad.com/datenblaetter/725000-749999/736880-da-
 </package>
 </packages>
 </library>
-<library name="rectifier">
-<description>&lt;b&gt;Rectifiers&lt;/b&gt;&lt;p&gt;
-General Instrument, Semikron, Diotec, Fagor&lt;p&gt;
-&lt;author&gt;Created by librarian@cadsoft.de&lt;/author&gt;</description>
-<packages>
-<package name="DB">
-<description>&lt;b&gt;Single Phase 1.0 AMP Glass Passivated Bridge Rectifier&lt;/b&gt;&lt;p&gt;
-Taiwan Semiconductor Co.,Ltd. - TSC&lt;br&gt;
-Source: http://www.taiwansemi.com/TSCbig5/ezcatfiles/cust/img/img/db101g.pdf</description>
-<wire x1="4.174" y1="-2.921" x2="4.174" y2="2.921" width="0.1524" layer="21"/>
-<wire x1="-4.174" y1="2.921" x2="-4.174" y2="-2.921" width="0.1524" layer="21"/>
-<wire x1="-3.662" y1="2.921" x2="-4.174" y2="2.921" width="0.1524" layer="21"/>
-<wire x1="-4.174" y1="-2.921" x2="-3.662" y2="-2.921" width="0.1524" layer="21"/>
-<wire x1="-3.662" y1="2.921" x2="-3.662" y2="-2.921" width="0.1524" layer="21"/>
-<wire x1="-3.048" y1="-2.032" x2="-2.032" y2="-2.032" width="0.1524" layer="21"/>
-<wire x1="-2.54" y1="-1.524" x2="-2.54" y2="-2.54" width="0.1524" layer="21"/>
-<wire x1="2.032" y1="-2.032" x2="3.048" y2="-2.032" width="0.1524" layer="21"/>
-<wire x1="-3.662" y1="-2.921" x2="4.174" y2="-2.921" width="0.1524" layer="21"/>
-<wire x1="4.174" y1="2.921" x2="-3.662" y2="2.921" width="0.1524" layer="21"/>
-<wire x1="-3.175" y1="2.413" x2="-2.5146" y2="2.413" width="0.1524" layer="21" curve="-119.465551"/>
-<wire x1="-2.5146" y1="2.413" x2="-1.8542" y2="2.413" width="0.1524" layer="21" curve="106.204699"/>
-<wire x1="1.825" y1="2.413" x2="2.4854" y2="2.413" width="0.1524" layer="21" curve="-119.465551"/>
-<wire x1="2.4854" y1="2.413" x2="3.1458" y2="2.413" width="0.1524" layer="21" curve="106.204699"/>
-<pad name="+" x="-2.54" y="-3.81" drill="0.8128"/>
-<pad name="-" x="2.54" y="-3.81" drill="0.8128" shape="octagon"/>
-<pad name="AC1" x="2.54" y="3.81" drill="0.8128" shape="octagon"/>
-<pad name="AC2" x="-2.54" y="3.81" drill="0.8128" shape="octagon"/>
-<text x="-3.175" y="-0.635" size="1.27" layer="27" ratio="10">&gt;VALUE</text>
-<text x="-4.445" y="-2.54" size="1.27" layer="25" ratio="10" rot="R90">&gt;NAME</text>
-<rectangle x1="-2.921" y1="-3.81" x2="-2.159" y2="-2.921" layer="51"/>
-<rectangle x1="2.159" y1="-3.81" x2="2.921" y2="-2.921" layer="51"/>
-<rectangle x1="2.159" y1="2.921" x2="2.921" y2="3.81" layer="51"/>
-<rectangle x1="-2.921" y1="2.921" x2="-2.159" y2="3.81" layer="51"/>
-<rectangle x1="-3.175" y1="-3.175" x2="-1.905" y2="-2.921" layer="51"/>
-<rectangle x1="1.905" y1="-3.175" x2="3.175" y2="-2.921" layer="51"/>
-<rectangle x1="1.905" y1="2.921" x2="3.175" y2="3.175" layer="51"/>
-<rectangle x1="-3.175" y1="2.921" x2="-1.905" y2="3.175" layer="51"/>
-</package>
-</packages>
-</library>
 <library name="74xx-us">
 <description>&lt;b&gt;TTL Devices, 74xx Series with US Symbols&lt;/b&gt;&lt;p&gt;
 Based on the following sources:
@@ -2161,6 +2129,48 @@ Based on the following sources:
 <pad name="14" x="-7.62" y="3.81" drill="0.8128" shape="long" rot="R90"/>
 <text x="-9.271" y="-3.048" size="1.27" layer="25" ratio="10" rot="R90">&gt;NAME</text>
 <text x="-6.731" y="-0.635" size="1.27" layer="27" ratio="10">&gt;VALUE</text>
+</package>
+</packages>
+</library>
+<library name="transistor-power">
+<description>&lt;b&gt;Power Transistors&lt;/b&gt;&lt;p&gt;
+&lt;author&gt;Created by librarian@cadsoft.de&lt;/author&gt;</description>
+<packages>
+<package name="SO-08">
+<description>&lt;B&gt;Small Outline Narrow Plastic Gull Wing&lt;/B&gt;&lt;p&gt;
+150-mil body, package type SN</description>
+<wire x1="-2.9" y1="3.9" x2="2.9" y2="3.9" width="0.1998" layer="39"/>
+<wire x1="2.9" y1="3.9" x2="2.9" y2="-3.9" width="0.1998" layer="39"/>
+<wire x1="2.9" y1="-3.9" x2="-2.9" y2="-3.9" width="0.1998" layer="39"/>
+<wire x1="-2.9" y1="-3.9" x2="-2.9" y2="3.9" width="0.1998" layer="39"/>
+<wire x1="2.4" y1="1.9" x2="2.4" y2="-1.4" width="0.2032" layer="51"/>
+<wire x1="2.4" y1="-1.4" x2="2.4" y2="-1.9" width="0.2032" layer="51"/>
+<wire x1="2.4" y1="-1.9" x2="-2.4" y2="-1.9" width="0.2032" layer="51"/>
+<wire x1="-2.4" y1="-1.9" x2="-2.4" y2="-1.4" width="0.2032" layer="51"/>
+<wire x1="-2.4" y1="-1.4" x2="-2.4" y2="1.9" width="0.2032" layer="51"/>
+<wire x1="-2.4" y1="1.9" x2="2.4" y2="1.9" width="0.2032" layer="51"/>
+<wire x1="2.4" y1="-1.4" x2="-2.4" y2="-1.4" width="0.2032" layer="51"/>
+<smd name="2" x="-0.635" y="-2.6" dx="0.6" dy="2.2" layer="1"/>
+<smd name="7" x="-0.635" y="2.6" dx="0.6" dy="2.2" layer="1"/>
+<smd name="1" x="-1.905" y="-2.6" dx="0.6" dy="2.2" layer="1"/>
+<smd name="3" x="0.635" y="-2.6" dx="0.6" dy="2.2" layer="1"/>
+<smd name="4" x="1.905" y="-2.6" dx="0.6" dy="2.2" layer="1"/>
+<smd name="8" x="-1.905" y="2.6" dx="0.6" dy="2.2" layer="1"/>
+<smd name="6" x="0.635" y="2.6" dx="0.6" dy="2.2" layer="1"/>
+<smd name="5" x="1.905" y="2.6" dx="0.6" dy="2.2" layer="1"/>
+<text x="-2.667" y="-1.905" size="1.27" layer="25" rot="R90">&gt;NAME</text>
+<text x="3.937" y="-1.905" size="1.27" layer="27" rot="R90">&gt;VALUE</text>
+<text x="-1.905" y="-0.635" size="0.4064" layer="48">IPC SO8</text>
+<text x="-1.905" y="0.365" size="0.3048" layer="48">JEDEC MS-012 AA</text>
+<rectangle x1="-2.1501" y1="-3.1001" x2="-1.6599" y2="-2" layer="51"/>
+<rectangle x1="-0.8801" y1="-3.1001" x2="-0.3899" y2="-2" layer="51"/>
+<rectangle x1="0.3899" y1="-3.1001" x2="0.8801" y2="-2" layer="51"/>
+<rectangle x1="1.6599" y1="-3.1001" x2="2.1501" y2="-2" layer="51"/>
+<rectangle x1="1.6599" y1="2" x2="2.1501" y2="3.1001" layer="51"/>
+<rectangle x1="0.3899" y1="2" x2="0.8801" y2="3.1001" layer="51"/>
+<rectangle x1="-0.8801" y1="2" x2="-0.3899" y2="3.1001" layer="51"/>
+<rectangle x1="-2.1501" y1="2" x2="-1.6599" y2="3.1001" layer="51"/>
+<rectangle x1="-1" y1="-1" x2="1" y2="1" layer="35"/>
 </package>
 </packages>
 </library>
@@ -2400,13 +2410,14 @@ design rules under a new name.</description>
 <element name="R3" library="rcl" package="0204/7" value="" x="123.19" y="95.25" rot="R180"/>
 <element name="R4" library="rcl" package="R0805" value="" x="137.4775" y="99.695" rot="MR180"/>
 <element name="C4" library="rcl" package="C0603" value="" x="133.985" y="96.52" rot="MR270"/>
-<element name="B1" library="rectifier" package="DB" value="DBDB101G" x="26.035" y="62.23"/>
 <element name="C5" library="rcl" package="E5-10,5" value="" x="26.035" y="51.435"/>
 <element name="C6" library="rcl" package="E5-10,5" value="" x="45.72" y="38.1" rot="R270"/>
 <element name="C7" library="rcl" package="C1206" value="" x="70.1675" y="41.91" rot="MR0"/>
 <element name="C8" library="rcl" package="E5-10,5" value="" x="133.35" y="14.605" rot="R270"/>
 <element name="JP1" library="pinhead" package="1X02" value="" x="28.575" y="98.1075" rot="R270"/>
 <element name="IC5" library="74xx-us" package="DIL14" value="7432N" x="108.585" y="30.1625" rot="R270"/>
+<element name="Q4" library="transistor-power" package="SO-08" value="" x="26.0858" y="61.595" rot="MR90"/>
+<element name="R25" library="rcl" package="R0603" value="1k" x="20.0025" y="63.5" rot="MR180"/>
 </elements>
 <signals>
 <signal name="RST">
@@ -2498,7 +2509,7 @@ design rules under a new name.</description>
 <wire x1="112.395" y1="37.7825" x2="109.5375" y2="37.7825" width="1.016" layer="16"/>
 </signal>
 <signal name="GND">
-<polygon width="0.4064" layer="16" isolate="0.6096" thermals="no">
+<polygon width="0.4064" layer="16" isolate="0.6096" thermals="no" rank="2">
 <vertex x="17.78" y="117.475"/>
 <vertex x="17.78" y="43.18"/>
 <vertex x="24.13" y="43.18"/>
@@ -2541,16 +2552,15 @@ design rules under a new name.</description>
 <via x="126.365" y="66.675" extent="1-16" drill="0.6" diameter="1.4224" shape="octagon"/>
 <via x="126.365" y="80.645" extent="1-16" drill="0.6" diameter="1.4224" shape="octagon"/>
 <wire x1="126.365" y1="66.675" x2="126.365" y2="80.645" width="0.6096" layer="1"/>
-<contactref element="B1" pad="-"/>
 <contactref element="C1" pad="2"/>
 <contactref element="C2" pad="2"/>
 <contactref element="C5" pad="-"/>
 <contactref element="C6" pad="-"/>
 <via x="67.945" y="110.8075" extent="1-16" drill="0.6" diameter="1.4224" shape="octagon"/>
 <via x="67.945" y="105.7275" extent="1-16" drill="0.6" diameter="1.4224" shape="octagon"/>
-<via x="33.655" y="64.77" extent="1-16" drill="0.6" diameter="1.4224" shape="octagon"/>
-<via x="38.735" y="64.77" extent="1-16" drill="0.6" diameter="1.4224" shape="octagon"/>
-<wire x1="38.735" y1="64.77" x2="33.655" y2="64.77" width="0.6096" layer="1"/>
+<via x="33.655" y="65.405" extent="1-16" drill="0.6" diameter="1.4224" shape="octagon"/>
+<via x="38.735" y="65.405" extent="1-16" drill="0.6" diameter="1.4224" shape="octagon"/>
+<wire x1="38.735" y1="65.405" x2="33.655" y2="65.405" width="0.6096" layer="1"/>
 <wire x1="67.945" y1="105.7275" x2="67.945" y2="110.8075" width="0.6096" layer="1"/>
 <via x="81.915" y="110.8075" extent="1-16" drill="0.6" diameter="1.4224" shape="octagon"/>
 <via x="81.915" y="105.7275" extent="1-16" drill="0.6" diameter="1.4224" shape="octagon"/>
@@ -2562,6 +2572,11 @@ design rules under a new name.</description>
 <contactref element="IC5" pad="4"/>
 <contactref element="IC5" pad="5"/>
 <contactref element="IC5" pad="10"/>
+<contactref element="R25" pad="1"/>
+<contactref element="J2" pad="GND@1"/>
+<contactref element="J2" pad="GND@2"/>
+<wire x1="28.5731" y1="109.975" x2="23.5604" y2="109.975" width="1.27" layer="16"/>
+<wire x1="23.5604" y1="109.975" x2="23.5731" y2="106.675" width="1.27" layer="16"/>
 </signal>
 <signal name="D0">
 <contactref element="SV1" pad="5"/>
@@ -3555,32 +3570,6 @@ design rules under a new name.</description>
 <wire x1="133.985" y1="97.37" x2="133.985" y2="99.695" width="0.6096" layer="16"/>
 <wire x1="133.985" y1="99.695" x2="136.5275" y2="99.695" width="0.6096" layer="16"/>
 </signal>
-<signal name="N$12">
-<contactref element="J2" pad="GND@1"/>
-<contactref element="J2" pad="GND@2"/>
-<contactref element="B1" pad="AC2"/>
-<wire x1="23.5731" y1="106.675" x2="23.5604" y2="66.1054" width="1.27" layer="16"/>
-<wire x1="23.5604" y1="66.1054" x2="23.495" y2="66.04" width="1.27" layer="16"/>
-<wire x1="28.5731" y1="109.975" x2="23.5604" y2="109.975" width="1.27" layer="16"/>
-<wire x1="23.5604" y1="109.975" x2="23.5731" y2="106.675" width="1.27" layer="16"/>
-</signal>
-<signal name="N$3">
-<contactref element="B1" pad="AC1"/>
-<contactref element="F2" pad="2"/>
-<wire x1="28.575" y1="66.04" x2="28.575" y2="70.0278" width="1.27" layer="16"/>
-</signal>
-<signal name="N$14">
-<contactref element="B1" pad="+"/>
-<contactref element="IC7" pad="1"/>
-<wire x1="36.195" y1="35.56" x2="32.385" y2="35.56" width="1.27" layer="16"/>
-<wire x1="32.385" y1="35.56" x2="29.21" y2="38.735" width="1.27" layer="16"/>
-<contactref element="C1" pad="1"/>
-<wire x1="36.195" y1="35.56" x2="39.5575" y2="35.56" width="1.27" layer="16"/>
-<contactref element="C5" pad="+"/>
-<wire x1="23.495" y1="58.42" x2="23.495" y2="51.435" width="1.27" layer="16"/>
-<wire x1="29.21" y1="38.735" x2="29.21" y2="45.72" width="1.27" layer="16"/>
-<wire x1="29.21" y1="45.72" x2="23.495" y2="51.435" width="1.27" layer="16"/>
-</signal>
 <signal name="N$8">
 <contactref element="J2" pad="PWR"/>
 <contactref element="JP1" pad="1"/>
@@ -3591,6 +3580,47 @@ design rules under a new name.</description>
 <contactref element="JP1" pad="2"/>
 <contactref element="F2" pad="1"/>
 <wire x1="28.575" y1="96.8375" x2="28.575" y2="92.5322" width="1.524" layer="16"/>
+</signal>
+<signal name="9V">
+<contactref element="Q4" pad="1"/>
+<contactref element="Q4" pad="3"/>
+<contactref element="Q4" pad="2"/>
+<contactref element="IC7" pad="1"/>
+<contactref element="C1" pad="1"/>
+<contactref element="C5" pad="+"/>
+<wire x1="36.195" y1="35.56" x2="32.385" y2="35.56" width="1.27" layer="16"/>
+<wire x1="32.385" y1="35.56" x2="29.21" y2="38.735" width="1.27" layer="16"/>
+<wire x1="36.195" y1="35.56" x2="39.5575" y2="35.56" width="1.27" layer="16"/>
+<wire x1="29.21" y1="38.735" x2="29.21" y2="45.72" width="1.27" layer="16"/>
+<wire x1="29.21" y1="45.72" x2="23.495" y2="51.435" width="1.27" layer="16"/>
+<wire x1="23.495" y1="51.435" x2="23.495" y2="59.6808" width="0.6096" layer="16"/>
+<wire x1="23.495" y1="59.6808" x2="23.4858" y2="59.69" width="0.6096" layer="16"/>
+<wire x1="23.4858" y1="59.69" x2="23.4858" y2="60.96" width="0.6096" layer="16"/>
+<wire x1="23.4858" y1="60.96" x2="23.4858" y2="62.23" width="0.6096" layer="16"/>
+<polygon width="0.6096" layer="16" isolate="0.4064" thermals="no">
+<vertex x="24.765" y="50.165"/>
+<vertex x="22.225" y="50.165"/>
+<vertex x="22.225" y="62.2935"/>
+<vertex x="24.765" y="62.2935"/>
+</polygon>
+</signal>
+<signal name="N$52">
+<contactref element="Q4" pad="8"/>
+<contactref element="Q4" pad="6"/>
+<contactref element="Q4" pad="5"/>
+<contactref element="Q4" pad="7"/>
+<contactref element="F2" pad="2"/>
+<polygon width="0.6096" layer="16" isolate="0.3048" thermals="no">
+<vertex x="26.035" y="71.12"/>
+<vertex x="26.035" y="59.69"/>
+<vertex x="31.115" y="59.69"/>
+<vertex x="31.115" y="71.12"/>
+</polygon>
+</signal>
+<signal name="N$3">
+<contactref element="Q4" pad="4"/>
+<contactref element="R25" pad="2"/>
+<wire x1="23.4858" y1="63.5" x2="20.8525" y2="63.5" width="0.6096" layer="16"/>
 </signal>
 </signals>
 </board>

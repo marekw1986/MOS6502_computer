@@ -7959,8 +7959,10 @@ VDPPUTC_CHLF
 	CLC								;It is LF, so we add 24 to VDP_CURSOR
 	LDA #$18						;Load 24 (0x18) to A
 	ADC VDP_CURSOR					;Add it LSB of VDP_CURSOR
+	STA VDP_CURSOR
 	LDA #$00						;Kiad 0 to A
-	ADC VDP_CURSOR					;Add it to MSB of VDP_CURSOR using carry from previous calculation
+	ADC VDP_CURSOR+1				;Add it to MSB of VDP_CURSOR using carry from previous calculation
+	STA VDP_CURSOR+1
 	JMP VDPPUTC_CHECKCURSOR			;Now we need to check if new value of VDP_CURSOR is vlid
 VDPPUTC_CHCR	
 	CMP #$0D						;Check if it is CR
@@ -8145,10 +8147,10 @@ VDPSCROLLUP
 ; 16-bit unsigned division by 40 routine
 ;   TOS /= 40, A = remainder, Y = 0
 ;
-DIV40
+NEXTLINE
 	LDA  #0         			;remainder
 	LDY  #16        			;loop counter
-DIV40B
+NLDIV40B
 	ASL  VDP_CURSOR        		;VDP_CURSOR is gradually replaced
 	ROL  VDP_CURSOR+1      		;with the quotient
 	ROL             			;A is gradually replaced
@@ -8158,7 +8160,7 @@ DIV40B
 	SBC  #40        			;yes: update partial
 								;remainder, set low bit
 	INC  VDP_CURSOR        			;in partial quotient
-DIV40C
+NLDIV40C
 	DEY 
 	BNE  DIV40B     			;loop 16 times
 	RTS 
