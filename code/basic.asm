@@ -7969,7 +7969,7 @@ VDPPUTC_CHCR
 	BNE VDPPUTC_SEND				;It is not. Normal chracter. Just send it.
 	;First clear cursor on screen
 	JSR VDPCLCURSOR
-	JSR DIV40						;Divide VDP_CURSOR by 40
+	JSR NEXTLINE						;Divide VDP_CURSOR by 40
 	INC VDP_CURSOR					;Increment VDP_CURSOR by 1, next line
 	JSR MUL40						;Multiply by 40
 	JMP VDPPUTC_CHECKCURSOR
@@ -8156,13 +8156,13 @@ NLDIV40B
 	ROL             			;A is gradually replaced
 								;with the remainder
 	CMP  #40        			;partial remainder >= 40?
-	BCC  DIV40C
+	BCC  NLDIV40C
 	SBC  #40        			;yes: update partial
 								;remainder, set low bit
 	INC  VDP_CURSOR        			;in partial quotient
 NLDIV40C
 	DEY 
-	BNE  DIV40B     			;loop 16 times
+	BNE  NLDIV40B     			;loop 16 times
 	RTS 
 	
 
@@ -9409,108 +9409,7 @@ LAB_RMSG	!raw	$0D,$0A,"Ready",$0D,$0A,$00
 LAB_IMSG	!raw	" Extra ignored",$0D,$0A,$00
 LAB_REDO	!raw	" Redo from start",$0D,$0A,$00
 
-CHARS:
-        ;This is the IBM-PC Character ROM +$20
-        !raw $00,$00,$00,$00,$00,$00,$00,$00 ;SP
-        !raw $30,$78,$78,$30,$30,$00,$30,$00 ;!
-        !raw $6C,$6C,$6C,$00,$00,$00,$00,$00 ;"
-        !raw $6C,$6C,$FE,$6C,$FE,$6C,$6C,$00 ;#
-        !raw $30,$7C,$C0,$78,$0C,$F8,$30,$00 ;$
-        !raw $00,$C6,$CC,$18,$30,$66,$C6,$00 ;%
-        !raw $38,$6C,$38,$76,$DC,$CC,$76,$00 ;&
-        !raw $60,$60,$C0,$00,$00,$00,$00,$00 ;'
-        !raw $18,$30,$60,$60,$60,$30,$18,$00 ;(
-        !raw $60,$30,$18,$18,$18,$30,$60,$00 ;)
-        !raw $00,$66,$3C,$FF,$3C,$66,$00,$00 ;*
-        !raw $00,$30,$30,$FC,$30,$30,$00,$00 ;+
-        !raw $00,$00,$00,$00,$00,$30,$30,$60 ;'
-        !raw $00,$00,$00,$FC,$00,$00,$00,$00 ;-
-        !raw $00,$00,$00,$00,$00,$30,$30,$00 ;.
-        !raw $06,$0C,$18,$30,$60,$C0,$80,$00 ;/
-        !raw $7C,$C6,$CE,$DE,$F6,$E6,$7C,$00 ;30, 0
-        !raw $30,$70,$30,$30,$30,$30,$FC,$00 ;31, 1
-        !raw $78,$CC,$0C,$38,$60,$CC,$FC,$00 ;32, 2
-        !raw $78,$CC,$0C,$38,$0C,$CC,$78,$00 ;33, 3
-        !raw $1C,$3C,$6C,$CC,$FE,$0C,$1E,$00 ;34, 4
-        !raw $FC,$C0,$F8,$0C,$0C,$CC,$78,$00 ;35, 5
-        !raw $38,$60,$C0,$F8,$CC,$CC,$78,$00 ;36, 6
-        !raw $FC,$CC,$0C,$18,$30,$30,$30,$00 ;37, 7
-        !raw $78,$CC,$CC,$78,$CC,$CC,$78,$00 ;38, 8
-        !raw $78,$CC,$CC,$7C,$0C,$18,$70,$00 ;39, 9
-        !raw $00,$30,$30,$00,$00,$30,$30,$00 ;:
-        !raw $00,$30,$30,$00,$00,$30,$30,$60 ;;
-        !raw $18,$30,$60,$C0,$60,$30,$18,$00 ;<
-        !raw $00,$00,$FC,$00,$00,$FC,$00,$00 ;=
-        !raw $60,$30,$18,$0C,$18,$30,$60,$00 ;>
-        !raw $78,$CC,$0C,$18,$30,$00,$30,$00 ;?
-        !raw $7C,$C6,$DE,$DE,$DE,$C0,$78,$00 ;@
-        !raw $30,$78,$CC,$CC,$FC,$CC,$CC,$00 ;A
-        !raw $FC,$66,$66,$7C,$66,$66,$FC,$00 ;B
-        !raw $3C,$66,$C0,$C0,$C0,$66,$3C,$00 ;C
-        !raw $F8,$6C,$66,$66,$66,$6C,$F8,$00 ;D
-        !raw $FE,$62,$68,$78,$68,$62,$FE,$00 ;E
-        !raw $FE,$62,$68,$78,$68,$60,$F0,$00 ;F
-        !raw $3C,$66,$C0,$C0,$CE,$66,$3E,$00 ;G
-        !raw $CC,$CC,$CC,$FC,$CC,$CC,$CC,$00 ;H
-        !raw $78,$30,$30,$30,$30,$30,$78,$00 ;I
-        !raw $1E,$0C,$0C,$0C,$CC,$CC,$78,$00 ;J
-        !raw $E6,$66,$6C,$78,$6C,$66,$E6,$00 ;K
-                                          
-        !raw $F0,$60,$60,$60,$62,$66,$FE,$00 ;L
-        !raw $C6,$EE,$FE,$FE,$D6,$C6,$C6,$00 ;M
-        !raw $C6,$E6,$F6,$DE,$CE,$C6,$C6,$00 ;N
-        !raw $38,$6C,$C6,$C6,$C6,$6C,$38,$00 ;O
-        !raw $FC,$66,$66,$7C,$60,$60,$F0,$00 ;P
-        !raw $78,$CC,$CC,$CC,$DC,$78,$1C,$00 ;Q
-        !raw $FC,$66,$66,$7C,$6C,$66,$E6,$00 ;R
-        !raw $78,$CC,$E0,$70,$1C,$CC,$78,$00 ;S
-        !raw $FC,$B4,$30,$30,$30,$30,$78,$00 ;T
-        !raw $CC,$CC,$CC,$CC,$CC,$CC,$FC,$00 ;U
-        !raw $CC,$CC,$CC,$CC,$CC,$78,$30,$00 ;V
-        !raw $C6,$C6,$C6,$D6,$FE,$EE,$C6,$00 ;W
-        !raw $C6,$C6,$6C,$38,$38,$6C,$C6,$00 ;X
-        !raw $CC,$CC,$CC,$78,$30,$30,$78,$00 ;Y
-        !raw $FE,$C6,$8C,$18,$32,$66,$FE,$00 ;Z
-        !raw $78,$60,$60,$60,$60,$60,$78,$00 ;[
-        !raw $C0,$60,$30,$18,$0C,$06,$02,$00
-        ;                                 
-        !raw $78,$18,$18,$18,$18,$18,$78,$00 ;]
-        !raw $10,$38,$6C,$C6,$00,$00,$00,$00 ;^
-        !raw $00,$00,$00,$00,$00,$00,$00,$FF ;_
-        !raw $30,$30,$18,$00,$00,$00,$00,$00 ;'
-        !raw $00,$00,$78,$0C,$7C,$CC,$76,$00 ;a
-        !raw $E0,$60,$60,$7C,$66,$66,$DC,$00 ;b
-        !raw $00,$00,$78,$CC,$C0,$CC,$78,$00 ;c
-        !raw $1C,$0C,$0C,$7C,$CC,$CC,$76,$00 ;d
-        !raw $00,$00,$78,$CC,$FC,$C0,$78,$00 ;e
-        !raw $38,$6C,$60,$F0,$60,$60,$F0,$00 ;f
-        !raw $00,$00,$76,$CC,$CC,$7C,$0C,$F8 ;g
-        !raw $E0,$60,$6C,$76,$66,$66,$E6,$00 ;h
-        !raw $30,$00,$70,$30,$30,$30,$78,$00 ;i
-        !raw $0C,$00,$0C,$0C,$0C,$CC,$CC,$78 ;j
-        !raw $E0,$60,$66,$6C,$78,$6C,$E6,$00 ;k
-        !raw $70,$30,$30,$30,$30,$30,$78,$00 ;l
-        !raw $00,$00,$CC,$FE,$FE,$D6,$C6,$00 ;m
-        !raw $00,$00,$F8,$CC,$CC,$CC,$CC,$00 ;n
-        !raw $00,$00,$78,$CC,$CC,$CC,$78,$00 ;o
-        !raw $00,$00,$DC,$66,$66,$7C,$60,$F0 ;p
-        !raw $00,$00,$76,$CC,$CC,$7C,$0C,$1E ;q
-        !raw $00,$00,$DC,$76,$66,$60,$F0,$00 ;r
-        !raw $00,$00,$7C,$C0,$78,$0C,$F8,$00 ;s
-        !raw $10,$30,$7C,$30,$30,$34,$18,$00 ;t
-        !raw $00,$00,$CC,$CC,$CC,$CC,$76,$00 ;u
-        !raw $00,$00,$CC,$CC,$CC,$78,$30,$00 ;v
-        !raw $00,$00,$C6,$D6,$FE,$FE,$6C,$00 ;w
-        !raw $00,$00,$C6,$6C,$38,$6C,$C6,$00 ;x
-        !raw $00,$00,$CC,$CC,$CC,$7C,$0C,$F8 ;y
-        !raw $00,$00,$FC,$98,$30,$64,$FC,$00 ;z
-        !raw $1C,$30,$30,$E0,$30,$30,$1C,$00 ;{
-        !raw $18,$18,$18,$00,$18,$18,$18,$00 ;|
-        !raw $E0,$30,$30,$1C,$30,$30,$E0,$00 ;}
-        !raw $76,$DC,$00,$00,$00,$00,$00,$00 ;~
-        !raw $00,$10,$38,$6C,$C6,$C6,$FE,$00 ;DEL
-        ;
-CHARS_END: 
+		!src "fonts.asm"
 
 CRTMSG:
 		!raw "Two roads diverged in a yellow wood, And sorry I could not travel both And be one traveler, long I stood And looked down one as far as I could To where it bent in the undergrowth;"
