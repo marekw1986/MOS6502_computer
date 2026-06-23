@@ -7816,6 +7816,31 @@ CFREAD_LOOP
 CFREADE
     RTS
     
+CFWRITE
+    LDA #<BLKDAT        ; Low byte of BLKDAT in BLKIND
+    STA BLKIND
+    LDA #>BLKDAT        ; High byte of BLKDAT in BLKIND
+    STA BLKIND+1
+    LDY #$00            ; Zero out Y
+CFWRITE_LOOP
+    JSR CFWAIT
+    LDA CFREG7
+    AND #$08            ; Filter out DRQ
+    BEQ CFWRITEE        ; DRQ clear = done
+    LDA (<BLKIND), Y    ; Load data byte through BLKIND pointer
+    STA CFREG0          ; Write data byte to CF
+    INY                 ; Increment Y
+    BNE CFWRITE_LOOP    ; If Y not rolled over - next iteration
+    INC BLKIND+1        ; Else increment BLKIND high byte
+    JMP CFWRITE_LOOP
+CFWRITEE
+    JSR CFCHERR         ; Check for errors after write
+    CLC                 ; C=0 = success
+    RTS
+    
+;INCLUDE FILESYSTEM
+!src "fs.asm"
+    
 ;VDP routines
 VDPINIT
     LDA #$00                      ;REG0 (TEXT MODE, NO EXTERNAL VIDEO)
