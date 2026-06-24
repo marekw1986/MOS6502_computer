@@ -236,8 +236,8 @@ no_save				; empty save vector for EhBASIC
 LAB_vec
 	!16	ACIAin		; byte in from simulated ACIA
 	!16	ACIAout		; byte out to simulated ACIA
-	!16	no_load		; null load vector for EhBASIC
-	!16	no_save		; null save vector for EhBASIC
+	!16	FS_LOAD		; null load vector for EhBASIC
+	!16	FS_SAVE		; null save vector for EhBASIC
 
 ; EhBASIC IRQ support
 

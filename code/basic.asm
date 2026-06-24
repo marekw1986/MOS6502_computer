@@ -7848,7 +7848,7 @@ CFWRITEE
     RTS
     
 ;INCLUDE FILESYSTEM
-;!src "fs.asm"
+!src "fs.asm"
     
 ;VDP routines
 VDPINIT
