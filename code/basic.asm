@@ -7797,24 +7797,58 @@ CFNERR
     RTS    
 
 CFREAD
-	LDA #<BLKDAT		;Low byte of BLKDAT in BLKIND
-	STA BLKIND
-	LDA #>BLKDAT		;High byte of BLKDAT in BLKIND
-	STA BLKIND+1
-	LDY #$00			;Zero out Y
+    ; Issue READ SECTOR command
+    LDA #$20            ; READ SECTOR command
+    STA CFREG7
+    ; Set up destination pointer
+    LDA #<BLKDAT
+    STA BLKIND
+    LDA #>BLKDAT
+    STA BLKIND+1
+    LDY #$00
 CFREAD_LOOP
-    JSR	CFWAIT
-	LDA	CFREG7
-	AND	#$08	        ;FILTER OUT DRQ
-	BNE	CFREADE
-	LDA	CFREG0		    ;READ DATA BYTE
-	STA	(<BLKIND), Y	;Save data bythe through BLKIND pointer
-	INY					;Increment Y
-	BNE CFREAD_LOOP		;If Y is not zero (not rolled over) - next iterration
-	INC BLKIND			;Else Increment BLKIND high byte
-	JMP	CFREAD_LOOP
+    JSR CFWAIT
+    LDA CFREG7
+    AND #$08            ; test DRQ bit
+    BEQ CFREADE         ; DRQ clear = no more data, done  <-- was BNE, now BEQ
+    LDA CFREG0          ; read data byte
+    STA (BLKIND),Y      ; store via pointer
+    INY
+    BNE CFREAD_LOOP
+    INC BLKIND+1        ; <-- was INC BLKIND (wrong), now correctly increments high byte
+    JMP CFREAD_LOOP
 CFREADE
+    CLC                 ; C=0 = success
     RTS
+
+CFWRITE
+    ; Issue WRITE SECTOR command
+    LDA #$30            ; WRITE SECTOR command
+    STA CFREG7
+    ; Set up source pointer
+    LDA #<BLKDAT
+    STA BLKIND
+    LDA #>BLKDAT
+    STA BLKIND+1
+    LDY #$00
+CFWRITE_LOOP
+    JSR CFWAIT
+    LDA CFREG7
+    AND #$08            ; test DRQ bit
+    BEQ CFWRITEE        ; DRQ clear = done
+    LDA (BLKIND),Y      ; load data byte via pointer
+    STA CFREG0          ; write to CF
+    INY
+    BNE CFWRITE_LOOP
+    INC BLKIND+1        ; increment high byte of pointer
+    JMP CFWRITE_LOOP
+CFWRITEE
+    JSR CFCHERR         ; check for write errors
+    CLC                 ; C=0 = success
+    RTS
+    
+;INCLUDE FILESYSTEM
+;!src "fs.asm"
     
 ;VDP routines
 VDPINIT
@@ -7959,17 +7993,15 @@ VDPPUTC_CHLF
 	CLC								;It is LF, so we add 24 to VDP_CURSOR
 	LDA #$18						;Load 24 (0x18) to A
 	ADC VDP_CURSOR					;Add it LSB of VDP_CURSOR
-	STA VDP_CURSOR
 	LDA #$00						;Kiad 0 to A
-	ADC VDP_CURSOR+1				;Add it to MSB of VDP_CURSOR using carry from previous calculation
-	STA VDP_CURSOR+1
+	ADC VDP_CURSOR					;Add it to MSB of VDP_CURSOR using carry from previous calculation
 	JMP VDPPUTC_CHECKCURSOR			;Now we need to check if new value of VDP_CURSOR is vlid
 VDPPUTC_CHCR	
 	CMP #$0D						;Check if it is CR
 	BNE VDPPUTC_SEND				;It is not. Normal chracter. Just send it.
 	;First clear cursor on screen
 	JSR VDPCLCURSOR
-	JSR NEXTLINE						;Divide VDP_CURSOR by 40
+	JSR DIV40						;Divide VDP_CURSOR by 40
 	INC VDP_CURSOR					;Increment VDP_CURSOR by 1, next line
 	JSR MUL40						;Multiply by 40
 	JMP VDPPUTC_CHECKCURSOR
@@ -8147,22 +8179,22 @@ VDPSCROLLUP
 ; 16-bit unsigned division by 40 routine
 ;   TOS /= 40, A = remainder, Y = 0
 ;
-NEXTLINE
+DIV40
 	LDA  #0         			;remainder
 	LDY  #16        			;loop counter
-NLDIV40B
+DIV40B
 	ASL  VDP_CURSOR        		;VDP_CURSOR is gradually replaced
 	ROL  VDP_CURSOR+1      		;with the quotient
 	ROL             			;A is gradually replaced
 								;with the remainder
 	CMP  #40        			;partial remainder >= 40?
-	BCC  NLDIV40C
+	BCC  DIV40C
 	SBC  #40        			;yes: update partial
 								;remainder, set low bit
 	INC  VDP_CURSOR        			;in partial quotient
-NLDIV40C
+DIV40C
 	DEY 
-	BNE  NLDIV40B     			;loop 16 times
+	BNE  DIV40B     			;loop 16 times
 	RTS 
 	
 
@@ -9409,7 +9441,7 @@ LAB_RMSG	!raw	$0D,$0A,"Ready",$0D,$0A,$00
 LAB_IMSG	!raw	" Extra ignored",$0D,$0A,$00
 LAB_REDO	!raw	" Redo from start",$0D,$0A,$00
 
-!src "fonts.asm"
+    !src "fonts1.asm"
 
 CRTMSG:
 		!raw "Two roads diverged in a yellow wood, And sorry I could not travel both And be one traveler, long I stood And looked down one as far as I could To where it bent in the undergrowth;"
