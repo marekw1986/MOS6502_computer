@@ -181,13 +181,13 @@ LAB_dowarm
 ; byte out to UART
 
 ACIAout
-	PHA						; save A
-ACIAout_wait
-	LDA	ACIA_STS			; get status byte
-	AND #$10				; mask transmit buffer status flag
-	BEQ ACIAout_wait		; loop if tx buffer full
-	PLA         			; restore A
-	STA ACIA_TXD       		; save byte to ACIA data port
+;	PHA						; save A
+;ACIAout_wait
+;	LDA	ACIA_STS			; get status byte
+;	AND #$10				; mask transmit buffer status flag
+;	BEQ ACIAout_wait		; loop if tx buffer full
+;	PLA         			; restore A
+;	STA ACIA_TXD       		; save byte to ACIA data port
 	;SAVE CONTEXT!
 	STA TEMP				; We nedd to reserve A first. W use TEMP for that
 	PHA
