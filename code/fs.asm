@@ -55,12 +55,6 @@ PROG_END    = $7F       ; zero page word pointing to end of program + 1
 ; 512-byte buffer in RAM (page-aligned is fine, just needs 512 bytes)
 SECTOR_BUF  = $0200     ; adjust as needed - must not overlap stack/zp/basic
 
-; CF card LBA address registers (adjust to match your CFINIT setup)
-CF_LBA0     = $8010
-CF_LBA1     = $8011
-CF_LBA2     = $8012
-CF_LBA3     = $8013     ; bits 0-3 = LBA27-24, bits 4-7 = $E0 (master, LBA mode)
-
 ; First data sector (sectors 0-16 reserved for dir + future use)
 FS_DATA_START = 17
 
@@ -554,16 +548,18 @@ FS_SAVE_DIR
     JMP CFWRITE             ; tail-call
 
 ; FS_SET_LBA  -  load FS_ZP_SEC (16-bit) into CF LBA registers
-; Assumes LBA bits 16-27 = 0, LBA3 = $E0 (master, LBA mode)
+; Assumes LBA bits 16-27 = 0, CFREG6 = $E0 (master, LBA mode)
 FS_SET_LBA
-    LDA FS_ZP_SEC
-    STA CF_LBA0
-    LDA FS_ZP_SEC+1
-    STA CF_LBA1
-    LDA #$00
-    STA CF_LBA2
-    LDA #$E0                ; master drive, LBA mode, upper nibble = 0
-    STA CF_LBA3
+    LDA #$01
+    STA CFREG2          ; sector count = 1
+    LDA FS_ZP_SEC       ; LBA bits 0-7
+    STA CFREG3
+    LDA FS_ZP_SEC+1     ; LBA bits 8-15
+    STA CFREG4
+    LDA #$00            ; LBA bits 16-23 = 0
+    STA CFREG5
+    LDA #$E0            ; LBA bits 24-27 = 0, master, LBA mode
+    STA CFREG6
     RTS
 
 ; FS_FIND_NAME  -  search SECTOR_BUF directory for FS_NAMEBUF

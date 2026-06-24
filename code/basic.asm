@@ -7797,44 +7797,53 @@ CFNERR
     RTS    
 
 CFREAD
-	LDA #<BLKDAT		;Low byte of BLKDAT in BLKIND
-	STA BLKIND
-	LDA #>BLKDAT		;High byte of BLKDAT in BLKIND
-	STA BLKIND+1
-	LDY #$00			;Zero out Y
-CFREAD_LOOP
-    JSR	CFWAIT
-	LDA	CFREG7
-	AND	#$08	        ;FILTER OUT DRQ
-	BNE	CFREADE
-	LDA	CFREG0		    ;READ DATA BYTE
-	STA	(<BLKIND), Y	;Save data bythe through BLKIND pointer
-	INY					;Increment Y
-	BNE CFREAD_LOOP		;If Y is not zero (not rolled over) - next iterration
-	INC BLKIND			;Else Increment BLKIND high byte
-	JMP	CFREAD_LOOP
-CFREADE
-    RTS
-    
-CFWRITE
-    LDA #<BLKDAT        ; Low byte of BLKDAT in BLKIND
+    ; Issue READ SECTOR command
+    LDA #$20            ; READ SECTOR command
+    STA CFREG7
+    ; Set up destination pointer
+    LDA #<BLKDAT
     STA BLKIND
-    LDA #>BLKDAT        ; High byte of BLKDAT in BLKIND
+    LDA #>BLKDAT
     STA BLKIND+1
-    LDY #$00            ; Zero out Y
+    LDY #$00
+CFREAD_LOOP
+    JSR CFWAIT
+    LDA CFREG7
+    AND #$08            ; test DRQ bit
+    BEQ CFREADE         ; DRQ clear = no more data, done  <-- was BNE, now BEQ
+    LDA CFREG0          ; read data byte
+    STA (BLKIND),Y      ; store via pointer
+    INY
+    BNE CFREAD_LOOP
+    INC BLKIND+1        ; <-- was INC BLKIND (wrong), now correctly increments high byte
+    JMP CFREAD_LOOP
+CFREADE
+    CLC                 ; C=0 = success
+    RTS
+
+CFWRITE
+    ; Issue WRITE SECTOR command
+    LDA #$30            ; WRITE SECTOR command
+    STA CFREG7
+    ; Set up source pointer
+    LDA #<BLKDAT
+    STA BLKIND
+    LDA #>BLKDAT
+    STA BLKIND+1
+    LDY #$00
 CFWRITE_LOOP
     JSR CFWAIT
     LDA CFREG7
-    AND #$08            ; Filter out DRQ
+    AND #$08            ; test DRQ bit
     BEQ CFWRITEE        ; DRQ clear = done
-    LDA (<BLKIND), Y    ; Load data byte through BLKIND pointer
-    STA CFREG0          ; Write data byte to CF
-    INY                 ; Increment Y
-    BNE CFWRITE_LOOP    ; If Y not rolled over - next iteration
-    INC BLKIND+1        ; Else increment BLKIND high byte
+    LDA (BLKIND),Y      ; load data byte via pointer
+    STA CFREG0          ; write to CF
+    INY
+    BNE CFWRITE_LOOP
+    INC BLKIND+1        ; increment high byte of pointer
     JMP CFWRITE_LOOP
 CFWRITEE
-    JSR CFCHERR         ; Check for errors after write
+    JSR CFCHERR         ; check for write errors
     CLC                 ; C=0 = success
     RTS
     
