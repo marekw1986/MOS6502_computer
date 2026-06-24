@@ -48,12 +48,15 @@ FS_ZP_TMP   = $E6
 FS_ZP_ENT   = $E7
 
 ; EhBASIC zero page: start and end of BASIC program
-; Verify these against your basic.asm (LAB_SARY / LAB_EARE etc.)
-PROG_START  = $0400     ; where EhBASIC keeps the program
-PROG_END    = $7F       ; zero page word pointing to end of program + 1
+; From basic.asm: Smeml=$79 (start of BASIC), Svarl=$7B (end of BASIC = start of vars)
+PROG_START_L = $79          ; Smeml - start of BASIC program low byte
+PROG_START_H = $7A          ; Smemh - start of BASIC program high byte
+PROG_END_L   = $7B          ; Svarl - end of BASIC program low byte  
+PROG_END_H   = $7C          ; Svarh - end of BASIC program high byte
 
-; 512-byte buffer in RAM (page-aligned is fine, just needs 512 bytes)
-SECTOR_BUF  = $0200     ; adjust as needed - must not overlap stack/zp/basic
+; 512-byte buffer in RAM - must match BLKDAT in your main build
+; BLKDAT = $0400 in basic.asm, CFREAD/CFWRITE use BLKIND pointing to BLKDAT
+SECTOR_BUF  = $0400     ; must match BLKDAT
 
 ; First data sector (sectors 0-16 reserved for dir + future use)
 FS_DATA_START = 17
@@ -81,21 +84,18 @@ FS_NAMEBUF  = $0300     ; 17 bytes in RAM (16 chars + null)
 ; ============================================================
 ; FS_SAVE  -  EhBASIC SAVE hook
 ;
-; Prompts for filename, saves BASIC program (PROG_START to
-; PROG_END) to the first free slot after existing files.
-; Overwrites an existing file of the same name.
+; Called by EhBASIC SAVE token. Bpntrl/Bpntrh points to
+; the character after "SAVE" on the BASIC line.
+; Usage:  SAVE "filename"
+; Parses the quoted filename then saves the BASIC program.
 ; ============================================================
 FS_SAVE
-    ; Print prompt
-    JSR LAB_CRLF
-    LDA #<FS_MSG_SAVEPROMPT
-    LDY #>FS_MSG_SAVEPROMPT
-    JSR FS_PRINT_STR
-
-    ; Get filename from user into FS_NAMEBUF
-    JSR FS_GETNAME
+    ; Entry diagnostic - print S so we know we got here
+    LDA #'S'
+    JSR V_OUTP
+    JSR FS_PARSE_FNAME      ; parse "filename" from BASIC line
     BCC FS_SAVE_GONAME
-    JMP FS_SAVE_ABORT       ; C set = user pressed ESC / empty name
+    JMP FS_SAVE_ABORT       ; no valid filename
 FS_SAVE_GONAME
 
     ; Load directory sector
@@ -114,14 +114,15 @@ FS_SAVE_DIROK
     JMP FS_SAVE_FULL        ; directory full
 
 FS_SAVE_FOUND_SLOT
-    ; Calculate BASIC program length: PROG_END - PROG_START
-    ; PROG_END is a ZP pointer to the byte AFTER the last program byte
-    LDA PROG_END
+    ; Calculate BASIC program length: Svarl - Smeml
+    ; Svarl/Svarh = end of program (start of variables)
+    ; Smeml/Smemh = start of program
     SEC
-    SBC #<PROG_START
+    LDA PROG_END_L
+    SBC PROG_START_L
     STA FS_ZP_CNT
-    LDA PROG_END+1
-    SBC #>PROG_START
+    LDA PROG_END_H
+    SBC PROG_START_H
     STA FS_ZP_CNT+1
 
     ; Find the next free sector (scan dir entries for highest end sector)
@@ -171,11 +172,11 @@ FS_SAVE_NAME2
     INY
     STA (FS_ZP_PTR),Y
 
-    ; Write load address (lo=<PROG_START, hi=>PROG_START)
-    LDA #<PROG_START
+    ; Write load address = Smeml (actual start of program in RAM)
+    LDA PROG_START_L
     LDY #FS_OFF_LOADLO
     STA (FS_ZP_PTR),Y
-    LDA #>PROG_START
+    LDA PROG_START_H
     INY
     STA (FS_ZP_PTR),Y
 
@@ -195,10 +196,10 @@ FS_SAVE_ZERO
 FS_SAVE_DIRSAVED
 
     ; Now write data sectors
-    ; Source pointer = PROG_START
-    LDA #<PROG_START
+    ; Source pointer = Smeml (actual start of BASIC program)
+    LDA PROG_START_L
     STA FS_ZP_PTR
-    LDA #>PROG_START
+    LDA PROG_START_H
     STA FS_ZP_PTR+1
 
     ; Bytes remaining in FS_ZP_CNT
@@ -255,16 +256,16 @@ FS_IO_ERR
 ; ============================================================
 ; FS_LOAD  -  EhBASIC LOAD hook
 ;
-; Prompts for filename, finds the file, loads it back to
-; PROG_START, updates PROG_END.
+; Called by EhBASIC LOAD token. Bpntrl/Bpntrh points to
+; the character after "LOAD" on the BASIC line.
+; Usage:  LOAD "filename"
+; Parses the quoted filename then loads the file.
 ; ============================================================
 FS_LOAD
-    JSR LAB_CRLF
-    LDA #<FS_MSG_LOADPROMPT
-    LDY #>FS_MSG_LOADPROMPT
-    JSR FS_PRINT_STR
-
-    JSR FS_GETNAME
+    ; Entry diagnostic - print L so we know we got here
+    LDA #'L'
+    JSR V_OUTP
+    JSR FS_PARSE_FNAME      ; parse "filename" from BASIC line
     BCC FS_LOAD_GONAME
     JMP FS_LOAD_ABORT
 FS_LOAD_GONAME
@@ -311,17 +312,11 @@ FS_LOAD_FOUND
     LDA (FS_ZP_PTR),Y
     STA FS_ZP_CNT+1
 
-    ; Destination pointer = PROG_START
-    LDA #<PROG_START
+    ; Destination pointer = Smeml (actual start of BASIC program)
+    LDA PROG_START_L
     STA FS_ZP_PTR
-    LDA #>PROG_START
+    LDA PROG_START_H
     STA FS_ZP_PTR+1
-
-    ; Track total bytes for updating PROG_END
-    LDA FS_ZP_CNT
-    PHA
-    LDA FS_ZP_CNT+1
-    PHA
 
 FS_LOAD_LOOP
     LDA FS_ZP_CNT
@@ -345,20 +340,15 @@ FS_LOAD_SECOK
     JMP FS_LOAD_LOOP
 
 FS_LOAD_DONE
-    ; Update PROG_END = PROG_START + original length
-    ; Restore original length from stack
-    PLA
-    STA FS_ZP_CNT+1
-    PLA
-    STA FS_ZP_CNT
-
-    LDA #<PROG_START
+    ; Update Svarl/Svarh = Smeml + loaded length
+    ; This tells EhBASIC where variables start (= end of program)
     CLC
+    LDA PROG_START_L
     ADC FS_ZP_CNT
-    STA PROG_END
-    LDA #>PROG_START
+    STA PROG_END_L
+    LDA PROG_START_H
     ADC FS_ZP_CNT+1
-    STA PROG_END+1
+    STA PROG_END_H
 
     JSR LAB_CRLF
     LDA #<FS_MSG_OK
@@ -472,15 +462,14 @@ FS_DIR_DONE
 
 ; ============================================================
 ; FS_DELETE  -  Mark a file as deleted
+; Usage: CALL FS_DELETE address with "filename" in BASIC line
+; or wire to a keyword. Parses quoted filename from Bpntrl.
 ; ============================================================
 FS_DELETE
-    JSR LAB_CRLF
-    LDA #<FS_MSG_DELPROMPT
-    LDY #>FS_MSG_DELPROMPT
-    JSR FS_PRINT_STR
-
-    JSR FS_GETNAME
-    BCS FS_DEL_ABORT
+    JSR FS_PARSE_FNAME
+    BCC FS_DEL_GONAME
+    RTS
+FS_DEL_GONAME
 
     JSR FS_LOAD_DIR
     BCC FS_DEL_DIROK
@@ -523,6 +512,106 @@ FS_DEL_SAVEOK
 
 FS_DEL_ABORT
     CLC
+    RTS
+
+; ============================================================
+; FS_PARSE_FNAME
+;
+; Parse a quoted filename from the current BASIC execute
+; pointer (Bpntrl/Bpntrh). Called when EhBASIC has just
+; processed SAVE/LOAD/etc and Bpntrl points to the next
+; character on the line, which should be a space then quote.
+;
+; Skips leading spaces, expects '"', copies chars up to
+; closing '"' or end of line into FS_NAMEBUF (null-padded
+; to 16 bytes).
+;
+; Returns C=0 if a valid name was found, C=1 if not.
+; Advances Bpntrl/Bpntrh past the closing quote.
+; ============================================================
+FS_PARSE_FNAME
+    LDY #$00                ; index into BASIC line
+
+; skip spaces
+FS_PF_SKIP
+    LDA (Bpntrl),Y
+    CMP #' '
+    BNE FS_PF_QUOTE
+    INY
+    BNE FS_PF_SKIP
+    ; Y wrapped - extremely long space run, give up
+    SEC
+    RTS
+
+FS_PF_QUOTE
+    CMP #$22                ; expecting open quote "
+    BEQ FS_PF_OPEN
+    SEC                     ; not a quote - syntax error
+    RTS
+
+FS_PF_OPEN
+    INY                     ; move past opening quote
+    LDX #$00                ; index into FS_NAMEBUF
+
+FS_PF_COPY
+    LDA (Bpntrl),Y
+    BEQ FS_PF_NOCLOSE       ; hit EOL without closing quote - still ok, use what we have
+    CMP #$22                ; closing quote?
+    BEQ FS_PF_CLOSE
+    CPX #15                 ; max 15 chars (+ null)
+    BEQ FS_PF_SKIP2         ; silently drop chars beyond limit
+    STA FS_NAMEBUF,X
+    INX
+FS_PF_SKIP2
+    INY
+    BNE FS_PF_COPY
+    ; Y wrapped (line > 255 chars) - shouldn't happen in BASIC
+
+FS_PF_CLOSE
+    INY                     ; advance past closing quote
+
+FS_PF_NOCLOSE
+    ; Check we got at least one character
+    CPX #$00
+    BEQ FS_PF_EMPTY         ; empty filename
+
+    ; Null-pad FS_NAMEBUF to 16 bytes
+    LDA #$00
+FS_PF_PAD
+    STA FS_NAMEBUF,X
+    INX
+    CPX #16
+    BNE FS_PF_PAD
+
+    ; Advance BASIC execute pointer past what we consumed (Y bytes)
+    TYA
+    CLC
+    ADC Bpntrl
+    STA Bpntrl
+    BCC FS_PF_OK
+    INC Bpntrh
+
+FS_PF_OK
+    ; DEBUG: print the filename we parsed so we can verify it
+    JSR LAB_CRLF
+    LDA #<FS_MSG_PARSED
+    LDY #>FS_MSG_PARSED
+    JSR FS_PRINT_STR
+    LDX #$00
+FS_PF_DBLOOP
+    LDA FS_NAMEBUF,X
+    BEQ FS_PF_DBDONE
+    JSR V_OUTP
+    INX
+    CPX #16
+    BNE FS_PF_DBLOOP
+FS_PF_DBDONE
+    JSR LAB_CRLF
+    CLC
+    RTS
+
+FS_PF_EMPTY
+    SEC
     RTS
 
 ; ============================================================
@@ -1044,6 +1133,8 @@ FS_MSG_LOADPROMPT
     !raw "Load file: ",$00
 FS_MSG_DELPROMPT
     !raw "Delete file: ",$00
+FS_MSG_PARSED
+    !raw "File: ",$00
 FS_MSG_OK
     !raw "OK",$0D,$0A,$00
 FS_MSG_FULL
