@@ -9409,7 +9409,7 @@ LAB_RMSG	!raw	$0D,$0A,"Ready",$0D,$0A,$00
 LAB_IMSG	!raw	" Extra ignored",$0D,$0A,$00
 LAB_REDO	!raw	" Redo from start",$0D,$0A,$00
 
-		!src "fonts.asm"
+!src "fonts.asm"
 
 CRTMSG:
 		!raw "Two roads diverged in a yellow wood, And sorry I could not travel both And be one traveler, long I stood And looked down one as far as I could To where it bent in the undergrowth;"
