@@ -8410,25 +8410,30 @@ KBD2A_LOOKUP:
     STA KBDDATA
     TXA
     RTS
-KBD2A_CHKKRSETCTRL:             ;Ctrl key press/release
+KBD2A_CHKKRSETCTRL:
     LDA KBDKRFL
     CMP #$01
-    BEQ KBD2A_CLRFLDATA_RETURN  ;Release: clear flags
-    LDA #$01                    ;Press: set ctrl flag
+    BNE KBD2A_SETCTRL           ;Not a release, go set the flag
+    LDA #$00                    ;Release: clear only ctrl flag
+    STA KBDCTRLFL
+    STA KBDKRFL                 ;Clear release flag too
+    JMP KBD2A_CLRDATA_RETURN
+KBD2A_SETCTRL:
+    LDA #$01
     STA KBDCTRLFL
     JMP KBD2A_CLRDATA_RETURN
 KBD2A_CHKKRSETSF:
     LDA KBDKRFL
     CMP #$01
-    BEQ KBD2A_CLRFLDATA_RETURN
+    BNE KBD2A_SETSF             ;Not a release, go set the flag
+    LDA #$00                    ;Release: clear only shift flag
+    STA KBDSFFL
+    STA KBDKRFL                 ;Clear release flag too
+    JMP KBD2A_CLRDATA_RETURN
+KBD2A_SETSF:
     LDA #$01
     STA KBDSFFL
     JMP KBD2A_CLRDATA_RETURN
-KBD2A_CLRFLDATA_RETURN:
-    LDA #$00
-    STA KBDSFFL
-    STA KBDCTRLFL               ;Also clear ctrl flag on any modifier release
-    STA KBDKRFL
 KBD2A_CLRDATA_RETURN:
     LDA #$00
     STA KBDDATA
