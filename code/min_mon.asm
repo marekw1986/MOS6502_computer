@@ -180,7 +180,7 @@ LAB_dowarm
 
 ; byte out to UART
 
-ACIAout
+VDPout
 ;	PHA						; save A
 ;ACIAout_wait
 ;	LDA	ACIA_STS			; get status byte
@@ -207,15 +207,6 @@ ACIAout
 
 ; byte in from UART
 
-ACIAin
-;	LDA ACIA_STS       		; get ACIA status
-;	AND #$08        		; mask rx buffer status flag
-;	BEQ	LAB_nobyw			; branch if no byte waiting
-;	BEQ	KBDin				; branch if no byte waiting
-;	LDA ACIA_RXD       		; get byte from ACIA data port
-;	AND #$7F				; mask MSB OFF
-;	SEC						; flag byte received
-;	RTS
 KBDin
 	JSR KBDRCV
 	CMP #$00
@@ -234,10 +225,10 @@ no_save				; empty save vector for EhBASIC
 ; vector tables
 
 LAB_vec
-	!16	ACIAin		; byte in from simulated ACIA
-	!16	ACIAout		; byte out to simulated ACIA
-	!16	FS_LOAD		; null load vector for EhBASIC
-	!16	FS_SAVE		; null save vector for EhBASIC
+	!16	KBDin		; byte in from simulated ACIA
+	!16	VDPout		; byte out to simulated ACIA
+	!16	no_load		; null load vector for EhBASIC
+	!16	no_save		; null save vector for EhBASIC
 
 ; EhBASIC IRQ support
 

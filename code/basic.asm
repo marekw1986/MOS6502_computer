@@ -7847,9 +7847,7 @@ CFWRITEE
     JSR CFCHERR         ; check for write errors
     CLC                 ; C=0 = success
     RTS
-    
-;INCLUDE FILESYSTEM
-!src "fs.asm"
+
     
 ;VDP routines
 VDPINIT
